@@ -22,7 +22,7 @@
 
 ### 同步模式（Synchronous）
 
-> 代码的任务依次执行，后一个任务必须等待前一个任务结束才能开始执行。程序的执行顺序和代码的编写顺序是完全一致的。在单线程模式下，大多数任务都会以同步模式执行
+> 在执行某段代码时，在该代码没有得到返回结果之前，其他代码暂时是无法执行的，但是一旦执行完成拿到返回值之后，就可以执行其他代码了。换句话说，在此段代码执行完未返回结果之前，会阻塞之后的代码执行，这样的情况称为同步。在单线程模式下，大多数任务都会以同步模式执行
 
 ```js
 console.log('global begin')
@@ -216,22 +216,13 @@ sendMessage('曹操')
 
 
 
-## 异步编程的几种方式
+## 异步编程的发展历程
 
 ### 1. 回调函数
 
 > 由调用者定义，交给执行者执行的函数
 
-**缺点**： 很容易形成回调地狱
-
-回调实现异步编程的场景：
-
-- ajax 请求的回调
-- 定时器中的回调
-- 事件回调
-- Nodejs 中的一些方法回调
-
-异步回调如果层级很少，可读性和代码的维护性暂时还是可以接受，一旦层级变多就会陷入回调地狱，上面这些异步编程的场景都会涉及回调地狱的问题。
+从历史发展的脉络来看，早些年为了实现 JS 的异步编程，一般都采用回调函数的方式，比如比较典型的事件的回调，或者用 setTimeout/ setInterval 来实现一些异步编程的操作，但是使用回调函数来实现存在一个很常见的问题，那就是回调地狱。
 
 ```js
 // callback就是回调函数
@@ -249,9 +240,18 @@ foo(function() {
 })
 ```
 
+**缺点**： 很容易形成回调地狱
 
+回调实现异步编程的场景：
 
-### 2. Promise
+- ajax 请求的回调
+- 定时器中的回调
+- 事件回调
+- Nodejs 中的一些方法回调
+
+异步回调如果层级很少，可读性和代码的维护性暂时还是可以接受，一旦层级变多就会陷入回调地狱，上面这些异步编程的场景都会涉及回调地狱的问题。
+
+### 2. [Promise](../es2015/Promise.md)
 
 > Promise是一个对象，用来表述一个异步任务执行之后是成功还是失败。
 > 采用 Promise 的实现方式在一定程度上解决了回调地狱的问题
@@ -294,15 +294,11 @@ ajax('/api/user.json').then((res) => {
 })
 ```
 
+使用 Promise 的优点是可以将异步操作以同步操作的流程表达出来，避免了层层嵌套的回调函数，但是 Promise 也存在一些问题，即便是使用 Promise 的链式调用，如果操作过多，其实并没有从根本上解决回调地狱的问题
 
+### 3. [Generator](https://link.zhihu.com/?target=https%3A//developer.mozilla.org/zh-CN/docs/Web/JavaScript/Guide/Iterators_and_Generators)
 
-### 3. Generator
-
-> 最大的特点就是可以交出函数的执行权，Generator 函数可以看出是异步任务的容器，需要暂停的地方，都用 yield 语法来标注。
-> Generator 函数一般配合 yield 使用，Generator 函数最后返回的是迭代器。
-> 参考文档：[迭代器和生成器 - JavaScript | MDN](https://link.zhihu.com/?target=https%3A//developer.mozilla.org/zh-CN/docs/Web/JavaScript/Guide/Iterators_and_Generators)
-> 定义生成器函数就是在function 后面跟一个 * 
-> Generator 函数会返回一个生成器对象，调用对象的next方法才会开始执行函数体内容，碰到yield关键词就会暂停执行，yield 后面的值将会作为next 的结果返回
+Generator 最大的特点就是可以交出函数的执行权，Generator 函数可以看出是异步任务的容器，需要暂停的地方，都用 yield 语法来标注。Generator 函数一般配合 yield 使用，Generator 函数最后返回的是迭代器。
 
 ```js
 function * gen() {
@@ -324,11 +320,12 @@ console.log(g.next())
 // { value: undefined, done: true }
 ```
 
-
+定义生成器函数就是在function 后面跟一个 * 
+Generator 函数会返回一个生成器对象，调用对象的next方法才会开始执行函数体内容，碰到yield关键词就会暂停执行，yield 后面的值将会作为next 的结果返回
 
 ### 4. async/await
 
-> async 是 Generator 函数的语法糖，async/await 的优点是代码清晰（不像使用 Promise 的时候需要写很多 then 的方法链），可以处理回调地狱的问题
+async 是 Generator 函数的语法糖，async/await 的优点是代码清晰（不像使用 Promise 的时候需要写很多 then 的方法链），可以处理回调地狱的问题
 
 ```js
 function testWait() {
