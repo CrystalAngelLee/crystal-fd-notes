@@ -1,5 +1,7 @@
 # 生成器函数 Generator
 
+通俗来讲 Generator 是一个带星号的“函数”（它并不是真正的函数），可以配合 yield 关键字来暂停或者执行函数。
+
 目的是为了能在复杂的异步代码中减少回调函数嵌套产生的问题，从而提供更好的异步编程解决方案
 
 ## 语法和基本使用
@@ -29,7 +31,7 @@ foo {<suspended>}
 
 
 
-### **yield**
+### **yield 基本介绍**
 
 - Generator 一般配合关键字 yield 作为使用
 - yield 类似 return 的功能但和 return 不一样 `yield` 不会结束掉当前函数的执行
@@ -111,7 +113,7 @@ for (const item of todos) {
 }
 ```
 
-### 异步编程
+### Generator 和异步编程
 
 **thunk 函数**
 
@@ -136,7 +138,7 @@ let isType = (type) => {
     return Object.prototype.toString.call(obj) === `[object ${type}]`;
   }
 }
-
+// 封装了之后我们可以这么来使用，从而来减少重复的逻辑代码
 let isString = isType('String');
 let isArray = isType('Array');
 isString("123");    // true
@@ -181,7 +183,9 @@ function run(gen){
 run(g);
 ```
 
-我们可以看到 run 函数和上面的执行效果其实是一样的。
+我们可以看到 run 函数和上面的执行效果其实是一样的。代码虽然只有几行，但其包含了递归的过程，解决了多层嵌套的问题，并且完成了异步操作的一次性的执行效果。这就是通过 thunk 函数完成异步操作的情况。
+
+以上是 Generator 和 thunk 结合的情况，其实 Promise 也可以和 Generator 配合，以实现上面的效果
 
 **Generator 和 Promise 结合**
 
@@ -218,3 +222,24 @@ run(g);
 ```
 
 thunk 函数的方式和通过 Promise 方式执行效果本质上是一样的，只不过通过 Promise 的方式也可以配合 Generator 函数实现同样的异步操作。
+
+
+
+# co 函数库
+
+co 函数库是著名程序员 TJ 发布的一个小工具，用于处理 Generator 函数的自动执行。核心原理其实就是上面讲的通过和 thunk 函数以及 Promise 对象进行配合，包装成一个库。它使用起来非常简单，比如还是用上面那段代码，第三段代码就可以省略了，直接引用 co 函数，包装起来就可以使用了
+
+```js
+const co = require('co');
+let g = gen();
+co(g).then(res =>{
+  console.log(res);
+})
+```
+
+这段代码比较简单，几行就完成了之前写的递归的那些操作。那么为什么 co 函数库可以自动执行 Generator 函数，它的处理原理是什么呢？
+
+1. 因为 Generator 函数就是一个异步操作的容器，它需要一种自动执行机制，co 函数接受 Generator 函数作为参数，并最后返回一个 Promise 对象。
+2. 在返回的 Promise 对象里面，co 先检查参数 gen 是否为 Generator 函数。如果是，就执行该函数；如果不是就返回，并将 Promise 对象的状态改为 resolved。
+3. co 将 Generator 函数的内部指针对象的 next 方法，包装成 onFulfilled 函数。这主要是为了能够捕捉抛出的错误。
+4. 关键的是 next 函数，它会反复调用自身。

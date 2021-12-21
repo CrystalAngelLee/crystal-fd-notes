@@ -10,7 +10,9 @@ promise 的出现是为了解决回调地狱的问题的
 
 ## 概述
 
-promise 是一个对象，保存着某个未来才会结束的事件
+简单来说 Promise 就是一个容器，里面保存着某个未来才会结束的事件（通常是异步操作）的结果。
+
+从语法上说，Promise 是一个对象，从它可以获取异步操作的消息。
 
 ### 两个特点
 
@@ -26,6 +28,21 @@ promise 是一个对象，保存着某个未来才会结束的事件
 1. 无法取消`Promise`，一旦新建它就会立即执行，无法中途取消。
 2. 如果不设置回调函数，`Promise`内部抛出的错误，不会反应到外部。
 3. 当处于`pending`状态时，无法得知目前进展到哪一个阶段（刚刚开始还是即将完成）。
+
+### Promise 如何解决回调地狱
+
+首先，回调地狱的两个主要问题是：
+
+1. 多层嵌套的问题；
+2. 每种任务的处理结果存在两种可能性（成功或失败），那么需要在每种任务执行结束后分别处理这两种可能性。
+
+Promise 利用了三大技术手段来解决回调地狱：**回调函数延迟绑定、返回值穿透、错误冒泡**。
+
+*回调函数延迟绑定* 就是通过 then 方法传入回调函数
+
+*返回值穿透* 根据 then 回调函数的传入值创建不同类型的 promise, 然后把返回的 Promise 穿透到外层
+
+*错误冒泡*  then 前面产生的错误会一直向后传递，被 catch 接收到进行处理
 
 
 
@@ -157,17 +174,92 @@ process.on('unhandledRejection', (reason, promise) => {
 
 快速创建一个一定是失败的 Promise 对象
 
-
-
-### Promise 并行执行
-
 #### Promise.all()
 
-接收一个数组
+语法： `Promise.all（iterable）`
+
+参数： 一个可迭代对象，如 Array。
+
+描述： 此方法对于汇总多个 promise 的结果很有用，在 ES6 中可以将多个 Promise.all 异步请求并行操作，返回结果一般有下面两种情况。
+
+当所有结果成功返回时按照请求顺序返回成功。
+
+当其中有一个失败方法时，则进入失败方法。
+
+#### Promise.allSettled()
+
+Promise.allSettled 的语法及参数跟 Promise.all 类似，其参数接受一个 Promise 的数组，返回一个新的 Promise。唯一的不同在于，执行完之后不会失败，也就是说当 Promise.allSettled 全部处理完成后，我们可以拿到每个 Promise 的状态，而不管其是否处理成功。
+
+```js
+const resolved = Promise.resolve(2);
+const rejected = Promise.reject(-1);
+const allSettledPromise = Promise.allSettled([resolved, rejected]);
+allSettledPromise.then(function (results) {
+  console.log(results);
+});
+// 返回结果：
+// [
+//    { status: 'fulfilled', value: 2 },
+//    { status: 'rejected', reason: -1 }
+// ]
+```
+
+#### Promise.any()
+
+**语法：** Promise.any（iterable）
+
+**参数：** iterable 可迭代的对象，例如 Array。
+
+**描述：** any 方法返回一个 Promise，只要参数 Promise 实例有一个变成 fulfilled 状态，最后 any 返回的实例就会变成 fulfilled 状态；如果所有参数 Promise 实例都变成 rejected 状态，包装实例就会变成 rejected 状态。
+
+```js
+const resolved = Promise.resolve(2);
+const rejected = Promise.reject(-1);
+const anyPromise = Promise.any([resolved, rejected]);
+anyPromise.then(function (results) {
+  console.log(results);
+});
+// 返回结果：
+// 2
+```
 
 #### Promise.race()
 
-返回一个 promise，一旦迭代器中的某个promise解决或拒绝，返回的 promise就会解决或拒绝
+**语法：** Promise.race（iterable）
+
+**参数：** iterable 可迭代的对象，例如 Array。
+
+**描述：** race 方法返回一个 Promise，只要参数的 Promise 之中有一个实例率先改变状态，则 race 方法的返回状态就跟着改变。那个率先改变的 Promise 实例的返回值，就传递给 race 方法的回调函数。
+
+我们来看一下这个业务场景，对于图片的加载，特别适合用 race 方法来解决，将图片请求和超时判断放到一起，用 race 来实现图片的超时判断。
+
+```js
+//请求某个图片资源
+function requestImg(){
+  var p = new Promise(function(resolve, reject){
+    var img = new Image();
+    img.onload = function(){ resolve(img); }
+    img.src = 'http://www.baidu.com/img/flexible/logo/pc/result.png';
+  });
+  return p;
+}
+//延时函数，用于给请求计时
+function timeout(){
+  var p = new Promise(function(resolve, reject){
+    setTimeout(function(){ reject('图片请求超时'); }, 5000);
+  });
+  return p;
+}
+Promise.race([requestImg(), timeout()])
+.then(function(results){
+  console.log(results);
+})
+.catch(function(reason){
+  console.log(reason);
+});
+```
+
+从上面的代码中可以看出，采用 Promise 的方式来判断图片是否加载成功，也是针对 Promise.race 方法的一个比较好的业务场景。
 
 
 
