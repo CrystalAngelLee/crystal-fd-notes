@@ -126,6 +126,14 @@ Event Loop线程处理的任务被分为两类即 微任务（micro task）和�
 - setImmediate() (非标准，IE 和 Node.js 中支持)
 - 注册事件
 
+| #                     | 浏览器 | Node |
+| --------------------- | :----: | ---: |
+| I/O                   |   ✅    |    ✅ |
+| setTimeout            |   ✅    |    ✅ |
+| setInterval           |   ✅    |    ✅ |
+| setImmediate          |   ❌    |    ✅ |
+| requestAnimationFrame |   ✅    |    ❌ |
+
 **常见的微任务：**
 
 - Promise
@@ -139,6 +147,12 @@ Event Loop线程处理的任务被分为两类即 微任务（micro task）和�
     console.log('微任务')
   })
   ```
+
+| #                          | 浏览器 | Node |
+| -------------------------- | :----: | ---: |
+| process.nextTick           |   ❌    |    ✅ |
+| MutationObserver           |   ✅    |    ❌ |
+| Promise.then catch finally |   ✅    |    ✅ |
 
 **[何时使用微任务](https://developer.mozilla.org/zh-CN/docs/Web/API/HTML_DOM_API/Microtask_guide#何时使用微任务)**
 
