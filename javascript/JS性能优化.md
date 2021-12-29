@@ -64,8 +64,6 @@ function sum(a, b) {
 
 
 
-# [JS 中的垃圾回收](./JS垃圾回收.md)
-
 # Performance 工具
 
 ## 为什么使用 Performance
@@ -341,6 +339,8 @@ for (var i = 0; i < 3; i++) {
 }
 ```
 
+## 字面量与构造式
+
 ## 直接量替换 Object 操作
 
 ```js
@@ -451,3 +451,9 @@ item.onclick = showText;
 var oul = document.getElementById("ul");
 oul.addEventListener("click", showText, true);
 ```
+
+
+
+# 关联文档
+
+- [JS 中的垃圾回收](./JS垃圾回收.md)
