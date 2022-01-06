@@ -156,7 +156,7 @@ function sum(a, b) {
 
 > 本质上就是采集大量的执行样本进行数学统计和分析
 
-使用基于 JSBench: [JavaScript performance benchmarking playground](https://jsbench.me/) 完成
+使用基于 [JSBench](https://jsbench.me/)  完成【[点击查看具体使用方法](https://kaiwu.lagou.com/xunlianying/index.html?courseId=17#/detail?weekId=765&lessonId=2309)】
 
 ## 慎用全局变量
 
@@ -166,22 +166,28 @@ function sum(a, b) {
 - 使用严格模式避免意外创建全局变量
 
 ```js
-var i,
-  str = "";
-for (i = 0; i < 1000; i++) {
-  str += i;
+var i, str = "";
+function func() {
+  for (i = 0; i < 1000; i++) {
+  	str += i;
+	}
 }
 
-// faster
-for (let i = 0; i < 1000; i++) {
+// better
+function func() {
   let str = "";
-  str += i;
+  for (let i = 0; i < 1000; i++) {
+    str += i;
+  }
 }
 ```
 
 ## 缓存全局变量
 
 将使用中无法避免的全局变量缓存到局部
+
+- 减少声明和语句数（词法 语法）
+- 作用域链查找变快
 
 ```js
 function getBtn() {
@@ -192,7 +198,7 @@ function getBtn() {
   let oBtn9 = document.getElementById("btn9");
 }
 
-// faster
+// better
 function getBtn() {
   let obj = document;
   let oBtn1 = obj.getElementById("btn1");
@@ -339,9 +345,11 @@ for (var i = 0; i < 3; i++) {
 }
 ```
 
-## 字面量与构造式
+## 字面量替换 Object 操作
 
-## 直接量替换 Object 操作
+> 使用 new 关键字调用了方法，创建了一个对象，需要消耗一定的时间。后续如果有扩容的需求，更方便操作
+>
+> 使用字面量直接开辟内存存放内容
 
 ```js
 var a = [1, 2, 3]; // faster
@@ -384,49 +392,6 @@ function doSomething(part, chapter) {
 }
 ```
 
-## 减少作用域链查找层级
-
-```js
-var _name = "abc";
-function foo() {
-  _name = "qwe";
-  function func() {
-    var age = 18;
-    console.log(age);
-    console.log(_name);
-  }
-  func();
-}
-
-// quick
-var _name = "abc";
-function foo() {
-  var _name = "qwe";
-  function func() {
-    var age = 18;
-    console.log(age);
-    console.log(_name);
-  }
-  func();
-}
-```
-
-## 减少数据读取次数
-
-> 将数据做缓存
-
-```js
-function hasEle(ele, cls) {
-  return ele.className === cls;
-}
-
-// faster
-function hasEle(ele, cls) {
-  var _classname = ele.className;
-  return _classname === cls;
-}
-```
-
 ## 减少声明及语句数
 
 ```js
@@ -457,3 +422,4 @@ oul.addEventListener("click", showText, true);
 # 关联文档
 
 - [JS 中的垃圾回收](./JS垃圾回收.md)
+- [V8 引擎执行流程](./JS引擎.md)
