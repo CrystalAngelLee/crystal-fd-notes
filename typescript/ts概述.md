@@ -53,9 +53,7 @@ function UserInfo(props: IUserInfo) {
 
 
 
-# TS学习环境搭建
-
-## IDE for TypeScript
+# IDE for TypeScript
 
 ### 1. VS Code
 
@@ -133,7 +131,7 @@ WebStorm 与 VS Code 相比，最大的优势在于开箱即用，这点可谓�
 
 
 
-## 安装 TypeScript
+# 安装 TypeScript
 
 全局安装TS  `npm i -g typescript`
 
@@ -162,7 +160,7 @@ npm i -g ts-node
 
 
 
-## Demo
+# Demo 练习
 
 新建一个文件，在文件夹下使用 `tsc --init` 命令创建一个tsconfig.json 文件，或者在 VS Code 应用窗口新建一个空的 tsconfg.json**配置 TypeScript 的行为**
 
