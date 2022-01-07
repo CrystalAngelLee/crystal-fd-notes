@@ -1281,3 +1281,870 @@ function operator(x: unknown) {
 ```
 
 在上述代码中，在添加返回值类型的地方，我们通过“参数名 + is + 类型”的格式明确表明了参数的类型，进而引起类型缩小，所以类型谓词函数的一个重要的应用场景是实现自定义类型守卫。
+
+
+
+# 类
+
+在实际业务中，任何实体都可以被抽象为一个使用类表达的类似对象的数据结构，且这个数据结构既包含属性，又包含方法，比如我们在下方抽象了一个狗的类。
+
+```ts
+class Dog {
+  name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  bark() {
+    console.log('Woof! Woof!');
+  }
+}
+
+const dog = new Dog('Q');
+dog.bark(); // => 'Woof! Woof!'
+```
+
+首先，我们定义了一个 class Dog ，它拥有 string 类型的 name 属性（见第 2 行）、bark 方法（见第 7 行）和一个构造器函数（见第 3 行）。然后，我们通过 new 关键字创建了一个 Dog 的实例，并把实例赋值给变量 dog（见 12 行）。最后，我们通过实例调用了类中定义的 bark 方法（见 13 行）。
+
+如果使用传统的 JavaScript 代码定义类，我们需要使用函数+原型链的形式进行模拟，如下代码所示：
+
+```ts
+function Dog(name: string) {
+  this.name = name; // ts(2683) 'this' implicitly has type 'any' because it does not have a type annotation.
+}
+Dog.prototype.bark = function () {
+  console.log('Woof! Woof!');
+};
+
+const dog = new Dog('Q'); // ts(7009) 'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.
+dog.bark(); // => 'Woof! Woof!'
+```
+
+在第 1～ 3 行，我们定义了 Dog 类的构造函数，并在构造函数内部定义了 name 属性，再在第 4 行通过 Dog 的原型链添加 bark 方法。
+
+和通过 class 方式定义类相比，这种方式明显麻烦不少，而且还缺少静态类型检测。
+
+## 继承
+
+> 类的主要特性
+
+在 TypeScript 中，使用 extends 关键字就能很方便地定义类继承的抽象模式，如下代码所示：
+
+```ts
+class Animal {
+  type = 'Animal';
+  say(name: string) {
+    console.log(`I'm ${name}!`);
+  }
+}
+
+class Dog extends Animal {
+  bark() {
+    console.log('Woof! Woof!');
+  }
+}
+
+const dog = new Dog();
+dog.bark(); // => 'Woof! Woof!'
+dog.say('Q'); // => I'm Q!
+dog.type; // => Animal
+```
+
+上面的例子展示了类最基本的继承用法。比如第 8 ～12 行定义的Dog是派生类，它派生自第 1～6 行定义的Animal基类，此时Dog实例继承了基类Animal的属性和方法。因此，在第 15～17 行我们可以看到，实例 dog 支持 bark、say、type 等属性和方法。
+
+> 说明：派生类通常被称作子类，基类也被称作超类（或者父类）。
+
+**派生类如果包含一个构造函数，则必须在构造函数中调用 super() 方法，这是 TypeScript 强制执行的一条重要规则。**
+
+如下示例，因为第 1～10 行定义的 Dog 类构造函数中没有调用 super 方法，所以提示了一个 ts(2377) 的错误；而第 12～22 行定义的 Dog 类构造函数中添加了 super 方法调用，所以可以通过类型检测。
+
+```ts
+class Dog extends Animal {
+  name: string;
+  constructor(name: string) { // ts(2377) Constructors for derived classes must contain a 'super' call.
+    this.name = name;
+  }
+
+  bark() {
+    console.log('Woof! Woof!');
+  }
+}
+
+class Dog extends Animal {
+  name: string;
+  constructor(name: string) {
+    super(); // 添加 super 方法
+    this.name = name;
+  }
+
+  bark() {
+    console.log('Woof! Woof!');
+  }
+}
+```
+
+这里的 super 函数会调用基类的构造函数，如下代码所示：
+
+```ts
+class Animal {
+  weight: number;
+  type = 'Animal';
+  constructor(weight: number) {
+    this.weight = weight;
+  }
+  say(name: string) {
+    console.log(`I'm ${name}!`);
+  }
+}
+
+class Dog extends Animal {
+  name: string;
+  constructor(name: string) {
+    super(); // ts(2554) Expected 1 arguments, but got 0.
+    this.name = name;
+  }
+
+  bark() {
+    console.log('Woof! Woof!');
+  }
+}
+```
+
+将鼠标放到第 15 行 Dog 类构造函数调用的 super 函数上，我们可以看到一个提示，它的类型是基类 Animal 的构造函数：constructor Animal(weight: number): Animal 。并且因为 Animal 类的构造函数要求必须传入一个数字类型的 weight 参数，而第 15 行实际入参为空，所以提示了一个 ts(2554) 的错误；如果我们显式地给 super 函数传入一个 number 类型的值，比如说 super(20)，则不会再提示错误了。
+
+## 公共、私有与受保护的修饰符
+
+类属性和方法除了可以通过 extends 被继承之外，还可以通过修饰符控制可访问性。
+
+在 TypeScript 中就支持 3 种访问修饰符，分别是 **public、private、protected。**
+
+- public 修饰的是在任何地方可见、公有的属性或方法；
+
+- private 修饰的是仅在同一类中可见、私有的属性或方法；
+
+- protected 修饰的是仅在类自身及子类中可见、受保护的属性或方法。
+
+
+在之前的代码中，示例类并没有用到可见性修饰符，在缺省情况下，类的属性或方法默认都是 public。如果想让有些属性对外不可见，那么我们可以使用private进行设置，如下所示：
+
+```ts
+class Son {
+  public firstName: string;
+  private lastName: string = 'Stark';
+  constructor(firstName: string) {
+    this.firstName = firstName;
+    this.lastName; // ok
+  }
+}
+
+const son = new Son('Tony');
+console.log(son.firstName); //  => "Tony"
+son.firstName = 'Jack';
+console.log(son.firstName); //  => "Jack"
+console.log(son.lastName); // ts(2341) Property 'lastName' is private and only accessible within class 'Son'.
+```
+
+在上面的例子中我们可以看到，第 3 行 Son 类的 lastName 属性是私有的，只在 Son 类中可见；第 2 行定义的 firstName 属性是公有的，在任何地方都可见。因此，我们既可以通过第 10 行创建的 Son 类的实例 son 获取或设置公共的 firstName 的属性（如第 11 行所示），还可以操作更改 firstName 的值（如第 12 行所示）。
+
+不过，对于 private 修饰的私有属性，只可以在类的内部可见。比如第 6 行，私有属性 lastName 仅在 Son 类中可见，如果其他地方获取了 lastName ，TypeScript 就会提示一个 ts(2341) 的错误（如第 14 行）。
+
+⚠️ 注意：TypeScript 中定义类的私有属性仅仅代表静态类型检测层面的私有。如果我们强制忽略 TypeScript 类型的检查错误，转译且运行 JavaScript 时依旧可以获取到 lastName 属性，这是因为 JavaScript 并不支持真正意义上的私有属性。
+
+接下来我们再看一下受保护的属性和方法，如下代码所示：
+
+```ts
+class Son {
+  public firstName: string;
+  protected lastName: string = 'Stark';
+  constructor(firstName: string) {
+    this.firstName = firstName;
+    this.lastName; // ok
+  }
+}
+
+class GrandSon extends Son {
+  constructor(firstName: string) {
+    super(firstName);
+  }
+
+  public getMyLastName() {
+    return this.lastName;
+  }
+}
+
+const grandSon = new GrandSon('Tony');
+console.log(grandSon.getMyLastName()); // => "Stark"
+grandSon.lastName; // ts(2445) Property 'lastName' is protected and only accessible within class 'Son' and its subclasses.
+```
+
+在第 3 行，修改 Son 类的 lastName 属性可见修饰符为 protected，表明此属性在 Son 类及其子类中可见。如示例第 6 行和第 16 行所示，我们既可以在父类 Son 的构造器中获取 lastName 属性值，又可以在继承自 Son 的子类 GrandSon 的 getMyLastName 方法获取 lastName 属性的值。
+
+⚠️ 虽然我们不能通过派生类的实例访问protected修饰的属性和方法，但是可以通过派生类的实例方法进行访问。比如示例中的第 21 行，通过实例的 getMyLastName 方法获取受保护的属性 lastName 是 ok 的，而第 22 行通过实例直接获取受保护的属性 lastName 则提示了一个 ts(2445) 的错误。
+
+## 只读修饰符
+
+在前面的例子中，Son 类 public 修饰的属性既公开可见，又可以更改值，如果我们不希望类的属性被更改，则可以使用 readonly 只读修饰符声明类的属性，如下代码所示：
+
+```ts
+class Son {
+  public readonly firstName: string;
+  constructor(firstName: string) {
+    this.firstName = firstName;
+  }
+}
+const son = new Son('Tony');
+son.firstName = 'Jack'; // ts(2540) Cannot assign to 'firstName' because it is a read-only property.
+```
+
+在第 2 行，我们给公开可见属性 firstName 指定了只读修饰符，这个时候如果再更改 firstName 属性的值，TypeScript 就会提示一个 ts(2540) 的错误（参见第 9 行）。这是因为只读属性修饰符保证了该属性只能被读取，而不能被修改。
+
+⚠️ **注意：如果只读修饰符和可见性修饰符同时出现，我们需要将只读修饰符写在可见修饰符后面。**
+
+## 存取器
+
+在 TypeScript 中可以通过getter、setter截取对类成员的读写访问。
+
+通过对类属性访问的截取，我们可以实现一些特定的访问控制逻辑。下面我们把之前的示例改造一下，如下代码所示：
+
+```ts
+class Son {
+  public firstName: string;
+  protected lastName: string = 'Stark';
+  constructor(firstName: string) {
+    this.firstName = firstName;
+  }
+}
+class GrandSon extends Son {
+  constructor(firstName: string) {
+    super(firstName);
+  }
+  get myLastName() {
+    return this.lastName;
+  }
+  set myLastName(name: string) {
+    if (this.firstName === 'Tony') {
+      this.lastName = name;
+    } else {
+      console.error('Unable to change myLastName');
+    }
+  }
+}
+const grandSon = new GrandSon('Tony');
+console.log(grandSon.myLastName); // => "Stark"
+grandSon.myLastName = 'Rogers';
+console.log(grandSon.myLastName); // => "Rogers"
+const grandSon1 = new GrandSon('Tony1');
+grandSon1.myLastName = 'Rogers'; // => "Unable to change myLastName"
+```
+
+在第 14～24 行，我们使用 myLastName 的getter、setter重写了之前的 GrandSon 类的方法，在 getter 中实际返回的是 lastName 属性。然后，在 setter 中，我们限定仅当 lastName 属性值为 'Tony' ，才把入参 name 赋值给它，否则打印错误。
+在第 28 行中，我们可以像访问类属性一样访问getter，同时也可以像更改属性值一样给setter赋值，并执行一些自定义逻辑。
+
+在第 27 行，因为 grandSon 实例的 lastName 属性被初始化成了 'Tony'，所以在第 29 行我们可以把 'Rogers' 赋值给 setter 。而 grandSon1 实例的 lastName 属性在第 32 行被初始化为 'Tony1'，所以在第 33 行把 'Rogers' 赋值给 setter 时，打印了我们自定义的错误信息。
+
+## 静态属性
+
+类的所有属性和方法，只有类在实例化时才会被初始化。我们也可以给类定义静态属性和方法。
+
+因为这些属性存在于类这个特殊的对象上，而不是类的实例上，所以我们可以直接通过类访问静态属性，如下代码所示：
+
+```ts
+class MyArray {
+  static displayName = 'MyArray';
+  static isArray(obj: unknown) {
+    return Object.prototype.toString.call(obj).slice(8, -1) === 'Array';
+  }
+}
+console.log(MyArray.displayName); // => "MyArray"
+console.log(MyArray.isArray([])); // => true
+console.log(MyArray.isArray({})); // => false
+```
+
+在第 2～3 行，通过 static 修饰符，我们给 MyArray 类分别定义了一个静态属性 displayName 和静态方法 isArray。之后，我们无须实例化 MyArray 就可以直接访问类上的静态属性和方法了，比如第 8 行访问的是静态属性 displayName，第 9～10 行访问的是静态方法 isArray。
+
+基于静态属性的特性，我们往往会把与类相关的常量、不依赖实例 this 上下文的属性和方法定义为静态属性，从而避免数据冗余，进而提升运行性能。
+
+⚠️ **注意：上边我们提到了不依赖实例 this 上下文的方法就可以定义成静态方法，这就意味着需要显式注解 this 类型才可以在静态方法中使用 this；非静态方法则不需要显式注解 this 类型，因为 this 的指向默认是类的实例。**
+
+## 抽象类
+
+> 类的特性
+>
+> 是一种不能被实例化仅能被子类继承的特殊类。
+
+可以使用抽象类定义派生类需要实现的属性和方法，同时也可以定义其他被继承的默认属性和方法，如下代码所示：
+
+```ts
+abstract class Adder {
+  abstract x: number;
+  abstract y: number;
+  abstract add(): number;
+  displayName = 'Adder';
+  addTwice(): number {
+    return (this.x + this.y) * 2;
+  }
+}
+class NumAdder extends Adder {
+  x: number;
+  y: number;
+  constructor(x: number, y: number) {
+    super();
+    this.x = x;
+    this.y = y;
+  }
+  add(): number {
+    return this.x + this.y;
+  }
+}
+const numAdder = new NumAdder(1, 2);
+console.log(numAdder.displayName); // => "Adder"
+console.log(numAdder.add()); // => 3
+console.log(numAdder.addTwice()); // => 6
+```
+
+在第 1～9 行，通过 abstract 关键字，我们定义了一个抽象类 Adder，并通过abstract关键字定义了抽象属性x、y及方法add，而且任何继承 Adder 的派生类都需要实现这些抽象属性和方法。
+
+同时，我们还在抽象类 Adder 中定义了可以被派生类继承的非抽象属性displayName和方法addTwice。
+
+然后，我们在第 10～21 行定义了继承抽象类的派生类 NumAdder， 并实现了抽象类里定义的 x、y 抽象属性和 add 抽象方法。如果派生类中缺少对 x、y、add 这三者中任意一个抽象成员的实现，那么第 12 行就会提示一个 ts(2515) 错误。
+
+抽象类中的其他非抽象成员则可以直接通过实例获取，比如第 23～25 行中，通过实例 numAdder，我们获取了 displayName 属性和 addTwice 方法。
+
+因为抽象类不能被实例化，并且派生类必须实现继承自抽象类上的抽象属性和方法定义，所以抽象类的作用其实就是对基础逻辑的封装和抽象。
+
+实际上，我们也可以定义一个描述对象结构的接口类型抽象类的结构，并通过 implements 关键字约束类的实现。
+
+**使用接口与使用抽象类相比，区别在于接口只能定义类成员的类型**，如下代码所示：
+
+```ts
+interface IAdder {
+  x: number;
+  y: number;
+  add: () => number;
+}
+class NumAdder implements IAdder {
+  x: number;
+  y: number;
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+  add() {
+    return this.x + this.y;
+  }
+  addTwice() {
+    return (this.x + this.y) * 2;
+  }
+}
+```
+
+在第 1～5 行，我们定义了一个包含 x、y、add 属性和方法的接口类型，然后在第 6～12 行实现了拥有接口约定的x、y 属性和 add 方法，以及接口未约定的 addTwice 方法的NumAdder类 。
+
+## 类的类型
+
+类的特性——类的类型和函数类似，即在声明类的时候，其实也同时声明了一个特殊的类型（确切地讲是一个接口类型），这个类型的名字就是类名，表示类实例的类型；在定义类的时候，我们声明的除构造函数外所有属性、方法的类型就是这个特殊类型的成员。如下代码所示：
+
+```ts
+class A {
+  name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
+}
+const a1: A = {}; // ts(2741) Property 'name' is missing in type '{}' but required in type 'A'.
+const a2: A = { name: 'a2' }; // ok
+
+```
+
+在第 1～6 行，我们在定义类 A ，也说明我们同时定义了一个包含字符串属性 name 的同名接口类型 A。因此，在第 7 行把一个空对象赋值给类型是 A 的变量 a1 时，TypeScript 会提示一个 ts(2741) 错误，因为缺少 name 属性。在第 8 行把对象{ name: 'a2' }赋值给类型同样是 A 的变量 a2 时，TypeScript 就直接通过了类型检查，因为有 name 属性。
+
+
+
+# Interface 接口类型
+
+TypeScript 不仅能帮助前端改变思维方式，还能强化面向接口编程的思维和能力，而这正是得益于 Interface 接口类型。通过接口类型，我们可以清晰地定义模块内、跨模块、跨项目代码的通信规则。
+
+TypeScript 对对象的类型检测遵循一种被称之为“鸭子类型”（duck typing）或者“结构化类型（structural subtyping）”的准则，即只要两个对象的结构一致，属性和方法的类型一致，则它们的类型就是一致的。
+
+初识接口类型:
+
+```ts
+function Study(language: { name: string; age: () => number }) {
+  console.log(`ProgramLanguage ${language.name} created ${language.age()} years ago.`);
+}
+Study({
+  name: 'TypeScript',
+  age: () => new Date().getFullYear() - 2012
+});
+```
+
+在上述代码中，我们定义了一个拥有 string 类型属性name、函数类型属性age的对象 language 作为参数（形参 Parameter）的函数。同时，我们还使用类似定义 JavaScript 对象字面量的语法定义了一个内联接口类型来约束参数对象的类型。
+
+然后，我们传递了一个 name 属性为 'TypeScript' 的字符串、age 属性为计算年份差函数的对象字面量作为参数（argument）来调用这个函数。
+
+在调用函数的过程中，TypeScript 静态类型检测到传递的对象字面量类型为 string 的 name 属性和类型为() => number 的 age 属性与函数参数定义的类型一致，于是不会抛出一个类型错误。
+
+如果我们传入一个 name 属性是 number 类型或者缺少age属性的对象字面量，如下代码所示：
+
+```ts
+Study({
+  name: 2,
+  age: () => new Date().getFullYear() - 2012
+});
+Study({
+  name: 'TypeScript'
+});
+```
+
+这时，第 2 行会提示错误： ts(2322) number 不能赋值给 string，第 7 行也会提示错误： ts(2345) 实参(Argument)与形参(Parameter)类型不兼容，缺少必需的属性 age。
+
+同样，如果我们传入一个包含了形参类型定义里没有的 id 属性的对象字面量作为实参，也会得到一个类型错误 ts(2345)，实参（Argument）与形参（Parameter）类型不兼容，不存在的属性 id，如下代码所示：
+
+```ts
+/** ts(2345) 实参(Argument)与形参(Parameter)类型不兼容，不存在的属性 id */
+Study({
+  id: 2,
+  name: 'TypeScript',
+  age: () => new Date().getFullYear() - 2012
+});
+```
+
+在上边的示例中，如果我们先把这个对象字面量赋值给一个变量，然后再把变量传递给函数进行调用，那么 TypeScript 静态类型检测就会仅仅检测形参类型中定义过的属性类型，而包容地忽略任何多余的属性，此时也不会抛出一个 ts(2345) 类型错误。
+
+如下代码所示，第 6 行不会提示错误。
+
+```ts
+let ts = {
+  id: 2,
+  name: 'TypeScript',
+  age: () => new Date().getFullYear() - 2012
+};
+Study(ts); // ok
+```
+
+这并非一个疏忽或 bug，而是有意为之地将对象字面量和变量进行区别对待，我们把这种情况称之为对象字面量的 freshness。
+
+因为这种内联形式的接口类型定义在语法层面与熟知的 JavaScript 解构颇为神似，所以很容易让我们产生混淆。下面我们通过如下示例对比一下解构语法与内联接口类型混用的效果。
+
+```ts
+/** 纯 JavaScript 解构语法 */
+function StudyJavaScript({name, age}) {
+  console.log(name, age);
+}
+/** TypeScript 里解构与内联类型混用 */
+function StudyTypeScript({name, age}: {name: string, age: () => number}) {
+    console.log(name, age);
+}
+/** 纯 JavaScript 解构语法，定义别名 */
+function StudyJavaScript({name: aliasName}) { // 定义name的别名
+  console.log(aliasName);
+}
+/** TypeScript */
+function StudyTypeScript(language: {name: string}) {
+  // console.log(name); // 不能直接打印name
+  console.log(language.name);  
+}
+```
+
+从上述代码中我们可以看到，在函数中，对象解构和定义接口类型的语法很类似（如第 12 行和 17 行所示），注意不要混淆。实际上，定义内联的接口类型是不可复用的，所以我们应该更多地使用interface关键字来抽离可复用的接口类型。
+
+在 TypeScript 中，接口的语法和其他类型的语言并没有太大区别，我们通过如下所示代码一起看看接口是如何定义的：
+
+```ts
+/ ** 关键字 接口名称 */
+interface ProgramLanguage {
+  /** 语言名称 */
+  name: string;
+  /** 使用年限 */
+  age: () => number;
+}
+```
+
+在上述代码中，我们定义了一个描述编程语言的接口，它包含一个字符类型的属性 name 和一个函数类型的属性 age 。 从中我们发现接口的语法格式是在 interface 关键字的空格后+接口名字，然后属性与属性类型的定义用花括弧包裹。
+
+在前边示例中，通过内联参数类型定义的 Study 函数就可以直接使用 ProgramLanguage 接口来定义参数 language 的类型了。
+
+```ts
+function NewStudy(language: ProgramLanguage) {
+  console.log(`ProgramLanguage ${language.name} created ${language.age()} years ago.`);
+}
+```
+
+我们还可以通过复用接口类型定义来约束其他逻辑。比如，我们通过如下所示代码定义了一个类型为 ProgramLanguage 的变量 TypeScript 。
+
+```ts
+let TypeScript: ProgramLanguage;
+```
+
+接着，我们把满足接口类型约定的一个对象字面量赋值给了这个变量，如下代码所示，此时也不会提示类型错误。
+
+```ts
+TypeScript = {
+  name: 'TypeScript',
+  age: () => new Date().getFullYear() - 2012
+}
+```
+
+而任何不符合约定的情况，都会提示类型错误。比如我们通过如下所示代码输入了一个空对象字面量，此时也会提示一个对象字面量类型 {} 缺少 name 和 age 属性的 ts(2739) 错误。
+
+```ts
+TypeScript = {
+}
+```
+
+按照如下所示代码添加 name 属性后，还是会提示一个对象字面量类型 { name: string; } 缺少必需的 age 属性的 ts( 2741) 错误。
+
+```ts
+TypeScript = {
+  name: 'TypeScript'
+}
+```
+
+此外，如下代码所示，如果我们把一个 name 属性是 2、age 属性是 'Wrong Type' 的对象赋值给 TypeScript ，在第 2 行会提示错误：ts(2322) number 类型不能赋值给 string，第 3 行会提示错误：ts(2322)string 不能赋值给函数类型。
+
+```ts
+TypeScript = {
+  name: 2,
+  age: 'Wrong Type'
+}
+```
+
+又或者如以下示例中额外多出了一个接口并未定义的属性 id，也会提示一个 ts(2322) 错误：对象字面量不能赋值给 ProgramLanguage 类型的变量 TypeScript。
+
+```ts
+TypeScript = {
+  name: 'TypeScript',
+  age: () => new Date().getFullYear() - 2012,
+  id: 1
+}
+```
+
+## 可缺省属性
+
+在前边的例子中，如果我们希望缺少 age 属性的对象字面量也能符合约定且不抛出类型错误，确切地说在接口类型中 age 属性可缺省，那么我们可以在属性名之后通过添加如下所示的? 语法来标注可缺省的属性或方法。如以下示例中，OptionalProgramLanguage 接口就拥有一个可缺省的函数类型的 age 属性。
+
+```ts
+/** 关键字 接口名称 */
+interface OptionalProgramLanguage {
+  /** 语言名称 */
+  name: string;
+  /** 使用年限 */
+  age?: () => number;
+}
+let OptionalTypeScript: OptionalProgramLanguage = {
+  name: 'TypeScript'
+}; // ok
+```
+
+当属性被标注为可缺省后，它的类型就变成了显式指定的类型与 undefined 类型组成的联合类型，比如示例中 OptionalTypeScript 的 age 属性类型就变成了如下所示内容：
+
+```ts
+(() => number) | undefined;
+```
+
+---
+如下所示的接口类型 OptionalTypeScript2 和 OptionalTypeScript 等价吗？
+
+```ts
+/** 关键字 接口名称 */
+interface OptionalProgramLanguage2 {
+  /** 语言名称 */
+  name: string;
+  /** 使用年限 */
+  age: (() => number) | undefined;
+}
+```
+
+答案当然是不等价，这与 上文提到函数可缺省参数和参数类型可以是 undefined 一样，可缺省意味着可以不设置属性键名，类型是 undefined 意味着属性键名不可缺省。
+
+既然值可能是 undefined ，如果我们需要对该对象的属性或方法进行操作，就可以使用类型守卫或 Optional Chain（在第 5 行的属性名后加 ? ），如下代码所示：
+
+```ts
+if (typeof OptionalTypeScript.age === 'function') {
+  OptionalTypeScript.age();
+}
+OptionalTypeScript.age?.();
+```
+
+---
+
+## 只读属性
+
+我们可能还会碰到这样的场景，希望对对象的某个属性或方法锁定写操作，比如前面例子中，定义了 TypeScriptLanguage 变量之后，name 属性的值肯定是稳定不可变更的 'TypeScript' ，而不能再被变更为 'JavaScript' 或 'AnyScript' 。这时，我们可以在属性名前通过添加 readonly 修饰符的语法来标注 name 为只读属性。
+
+```ts
+interface ReadOnlyProgramLanguage {
+  /** 语言名称 */
+  readonly name: string;
+  /** 使用年限 */
+  readonly age: (() => number) | undefined;
+}
+ 
+let ReadOnlyTypeScript: ReadOnlyProgramLanguage = {
+  name: 'TypeScript',
+  age: undefined
+}
+/** ts(2540)错误，name 只读 */
+ReadOnlyTypeScript.name = 'JavaScript';
+```
+
+需要注意的是，这仅仅是静态类型检测层面的只读，实际上并不能阻止对对象的篡改。因为在转译为 JavaScript 之后，readonly 修饰符会被抹除。因此，任何时候与其直接修改一个对象，不如返回一个新的对象，这会是一种比较安全的实践。
+
+## 定义函数类型
+
+```ts
+interface StudyLanguage {
+  (language: ProgramLanguage): void
+}
+/** 单独的函数实践 */
+let StudyInterface: StudyLanguage 
+  = language => console.log(`${language.name} ${language.age()}`);
+```
+
+在示例第 1~3 行，我们定义了一个接口类型 StudyLanguage，它有一个函数类型的匿名成员，函数参数类型 ProgramLanguage，返回值的类型是 void，通过这样的格式定义的接口类型又被称之为可执行类型，也就是一个函数类型。
+
+在第 6 行中，我们声明了一个 StudyLanguage 类型的变量，并赋给它一个箭头函数作为值。回想一下上下文类型推断，赋值操作左侧的 StudyLanguage 类型是可以约束箭头函数的类型，所以即便我们没有显式指定函数参数 language 的类型，TypeScript 也能推断出它的类型就是 ProgramLanguage。
+
+实际上，我们很少使用接口类型来定义函数的类型，更多使用内联类型或类型别名配合箭头函数语法来定义函数类型，具体示例如下：
+
+```ts
+type StudyLanguageType = (language: ProgramLanguage) => void
+```
+
+我们给箭头函数类型指定了一个别名 StudyLanguageType，在其他地方就可以直接复用 StudyLanguageType，而不用重新声明新的箭头函数类型定义。
+
+## 索引签名
+
+在实际工作中，使用接口类型较多的地方是对象，比如 React 组件的 Props & State、HTMLElement 的 Props，这些对象有一个共性，即所有的属性名、方法名都确定。
+
+实际上，我们经常会把对象当 Map 映射使用，比如下边代码示例中定义了索引是任意数字的对象 LanguageRankMap 和索引是任意字符串的对象 LanguageMap。
+
+```ts
+let LanguageRankMap = {
+  1: 'TypeScript',
+  2: 'JavaScript',
+  ...
+};
+let LanguageMap = {
+  TypeScript: 2012,
+  JavaScript: 1995,
+  ...
+};
+```
+
+这个时候，我们需要使用索引签名来定义上边提到的对象映射结构，并通过 “[索引名: 类型]”的格式约束索引的类型。
+
+索引名称的类型分为 string 和 number 两种，通过如下定义的 LanguageRankInterface 和 LanguageYearInterface 两个接口，我们可以用来描述索引是任意数字或任意字符串的对象。
+
+```ts
+interface LanguageRankInterface {
+  [rank: number]: string;
+}
+interface LanguageYearInterface {
+  [name: string]: number;
+}
+{
+  let LanguageRankMap: LanguageRankInterface = {
+    1: 'TypeScript', // ok
+    2: 'JavaScript', // ok
+    'WrongINdex': '2012' // ts(2322) 不存在的属性名
+  };
+  
+  let LanguageMap: LanguageYearInterface = {
+    TypeScript: 2012, // ok
+    JavaScript: 1995, // ok
+    1: 1970 // ok
+  };
+}
+```
+
+🤔 **注意：在上述示例中，数字作为对象索引时，它的类型既可以与数字兼容，也可以与字符串兼容，这与 JavaScript 的行为一致。因此，使用 0 或 '0' 索引对象时，这两者等价。**
+
+同样，我们可以使用 readonly 注解索引签名，此时将对应属性设置为只读就行，如下代码所示：
+
+```ts
+{
+  interface LanguageRankInterface {
+    readonly [rank: number]: string;
+  }
+  
+  interface LanguageYearInterface {
+    readonly [name: string]: number;
+  }
+} 
+```
+
+在上述示例中，LanguageRankInterface 和 LanguageYearInterface 任意的数字或者字符串类型的属性都是只读的。
+
+👽 **注意：虽然属性可以与索引签名进行混用，但是属性的类型必须是对应的数字索引或字符串索引的类型的子集，否则会出现错误提示。**
+
+下面我们通过如下所示的示例具体来看一下。
+
+```ts
+{
+  interface StringMap {
+    [prop: string]: number;
+    age: number; // ok
+    name: string; // ts(2411) name 属性的 string 类型不能赋值给字符串索引类型 number
+  }
+  interface NumberMap {
+    [rank: number]: string;
+    1: string; // ok
+    0: number; // ts(2412) 0 属性的 number 类型不能赋值给数字索引类型 string
+  }
+  interface LanguageRankInterface {
+    name: string; // ok
+    0: number; // ok
+    [rank: number]: string;
+    [name: string]: number;
+  }
+}
+```
+
+在上述示例中，因为接口 StringMap 属性 name 的类型 string 不是它所对应的字符串索引（第 3 行定义的 prop: string）类型 number 的子集，所以会提示一个错误。同理，因为接口 NumberMap 属性 0 的类型 number 不是它所对应的数字索引（第 8 行定义的 rank: number）类型 string 的子集，所以也会提示一个错误。
+
+另外，由于上边提到了数字类型索引的特殊性，所以我们不能约束数字索引属性与字符串索引属性拥有截然不同的类型，具体示例如下：
+
+```ts
+{
+  interface LanguageRankInterface {
+    [rank: number]: string; // ts(2413) 数字索引类型 string 类型不能赋值给字符串索引类型 number
+    [prop: string]: number;
+  }
+}
+```
+
+这里我们定义了 LanguageRankInterface 的数字索引 rank 的类型是 string，与定义的字符串索引 prop 的类型 number 不兼容，所以会提示一个 ts(2413) 错误。
+
+## 继承与实现
+
+在 TypeScript 中，接口类型可以继承和被继承，比如我们可以使用如下所示的 extends 关键字实现接口的继承。
+
+```ts
+{
+  interface DynamicLanguage extends ProgramLanguage {
+    rank: number; // 定义新属性
+  }
+  
+  interface TypeSafeLanguage extends ProgramLanguage {
+    typeChecker: string; // 定义新的属性
+  }
+  /** 继承多个 */
+  interface TypeScriptLanguage extends DynamicLanguage, TypeSafeLanguage {
+    name: 'TypeScript'; // 用原属性类型的兼容的类型(比如子集)重新定义属性
+  }
+}
+```
+
+在上述示例中，从第 2~8 行我们定义了两个继承了 ProgramLanguage 的接口 DynamicLanguage 和 TypeSafeLanguage，它们会继承 ProgramLanguage 所有的属性定义。第 11 行我们定义了同时继承了 DynamicLanguage 和 TypeSafeLanguage 的接口 TypeScriptLanguage，它会继承 DynamicLanguage 和 TypeSafeLanguage 所有的属性定义，并且使用同名的 name 属性定义覆盖了继承过来的 name 属性定义。
+
+**注意：我们仅能使用兼容的类型覆盖继承的属性**
+
+```ts
+{
+  /** ts(6196) 错误的继承，name 属性不兼容 */
+  interface WrongTypeLanguage extends ProgramLanguage {
+    name: number;
+  }
+}
+```
+
+在上述代码中，因为 ProgramLanguage 的 name 属性是 string 类型，WrongTypeLanguage 的 name 属性是 number，二者不兼容，所以不能继承，也会提示一个 ts(6196) 错误。
+
+上文中提到，我们既可以使用接口类型来约束类，反过来也可以使用类实现接口，那两者之间的关系到底是什么呢？这里，我们通过使用如下所示的 implements 关键字描述一下类和接口之间的关系。
+
+```ts
+/** 类实现接口 */
+{
+  class LanguageClass implements ProgramLanguage {
+    name: string = '';
+    age = () => new Date().getFullYear() - 2012
+  }
+}
+```
+
+在上述代码中，类 LanguageClass 实现了 ProgramLanguage 接口约定的 name、age 等属性和方法，如果我们移除 name 或者 age 的实现，将会提示一个类型错误。
+
+# Type 类型别名
+
+接口类型的一个作用是将内联类型抽离出来，从而实现类型可复用。其实，我们也可以使用类型别名接收抽离出来的内联类型实现复用。
+
+此时，我们可以通过如下所示“type别名名字 = 类型定义”的格式来定义类型别名。
+
+```ts
+/** 类型别名 */
+{
+  type LanguageType = {
+    /** 以下是接口属性 */
+    /** 语言名称 */
+    name: string;
+    /** 使用年限 */
+    age: () => number;
+  }
+}
+```
+
+在上述代码中，乍看上去有点像是在定义变量，只不过这里我们把 let 、const 、var 关键字换成了 type 罢了。
+
+此外，针对接口类型无法覆盖的场景，比如组合类型、交叉类型，我们只能使用类型别名来接收，如下代码所示：
+
+```ts
+{
+  /** 联合 */
+  type MixedType = string | number;
+  /** 交叉 */
+  type IntersectionType = { id: number; name: string; } 
+    & { age: number; name: string };
+  /** 提取接口属性类型 */
+  type AgeType = ProgramLanguage['age'];  
+}
+```
+
+在上述代码中，我们定义了一个 IntersectionType 类型别名，表示两个匿名接口类型交叉出的类型；同时定义了一个 AgeType 类型别名，表示抽取的 ProgramLanguage age 属性的类型。
+
+**注意：类型别名，诚如其名，即我们仅仅是给类型取了一个新的名字，并不是创建了一个新的类型。**
+
+<h3 style="color: red">Interface 与 Type 的区别</h3>
+
+通过以上介绍，我们已经知道适用接口类型标注的地方大都可以使用类型别名进行替代，这是否意味着在相应的场景中这两者等价呢？
+
+实际上，在大多数的情况下使用接口类型和类型别名的效果等价，但是在某些特定的场景下这两者还是存在很大区别。比如，重复定义的接口类型，它的属性会叠加，这个特性使得我们可以极其方便地对全局变量、第三方库的类型做扩展，如下代码所示：
+
+```ts
+{
+  interface Language {
+    id: number;
+  }
+  
+  interface Language {
+    name: string;
+  }
+  let lang: Language = {
+    id: 1, // ok
+    name: 'name' // ok
+  }
+}
+```
+
+在上述代码中，先后定义的两个 Language 接口属性被叠加在了一起，此时我们可以赋值给 lang 变量一个同时包含 id 和 name 属性的对象。
+
+不过，如果我们重复定义类型别名，如下代码所示，则会提示一个 ts(2300) 错误。
+
+```ts
+{
+  /** ts(2300) 重复的标志 */
+  type Language = {
+    id: number;
+  }
+  
+  /** ts(2300) 重复的标志 */
+  type Language = {
+    name: string;
+  }
+  let lang: Language = {
+    id: 1,
+    name: 'name'
+  }
+}
+```
+
