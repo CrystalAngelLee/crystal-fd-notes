@@ -2453,3 +2453,738 @@ type UnionInterce =
 在上述代码中，我们在第 3 行定义了 number 类型的 age 属性，第 6 行定义了 never 类型的 age 属性，等价于 age 属性的类型是由 number 和 never 类型组成的联合类型，所以我们可以把 number 类型的值（比如说数字字面量 1）赋予 age 属性；但是不能把其他任何类型的值（比如说字符串字面量 'string' ）赋予 age。
 
 同时，我们在第 5 行~第 8 行定义的接口类型中，还额外定义了 string 类型的字符串索引签名。因为 never 同时又是 string 类型的子类型，所以 age 属性的类型和字符串索引签名类型不冲突。如第 9 行~第 12 行所示，我们可以把一个 age 属性是 2、string 属性是 'string' 的对象字面量赋值给 UnionInterce 类型的变量 O。
+
+
+
+# 枚举类型
+
+> 枚举（Enums），用来表示一个被命名的整型常数的集合
+
+在 JavaScript 原生语言中并没有与枚举匹配的概念，而 TypeScript 中实现了枚举类型（Enums），这就意味着枚举也是 TypeScript 特有的语法（相对于 JavaScript）。
+
+在 TypeScript 中，我们可以使用枚举定义包含被命名的常量的集合，比如 TypeScript 支持数字、字符两种常量值的枚举类型。
+
+我们也可以使用 enum 关键字定义枚举类型，格式是 enum + 枚举名字 + 一对花括弧，花括弧里则是被命名了的常量成员。
+
+下面我们把表示星期的联合类型示例使用枚举类型实现一遍，如下代码所示：
+
+```ts
+enum Day {
+  SUNDAY,
+  MONDAY,
+  TUESDAY,
+  WEDNESDAY,
+  THURSDAY,
+  FRIDAY,
+  SATURDAY
+}  
+```
+
+> **注意：**相对于其他类型，enum 也是一种比较特殊的类型，因为它兼具值和类型于一体，有点类似 class（在定义 class 结构时， 其实我们也自动定义了 class 实例的类型）
+
+在上述示例中，Day 既可以表示集合，也可以表示集合的类型，所有成员（enum member）的类型都是 Day 的子类型。
+
+前边我们说过，JavaScript 中其实并没有与枚举类型对应的原始实现，而 TypeScript 转译器会把枚举类型转译为一个属性为常量、命名值从 0 开始递增数字映射的对象，在功能层面达到与枚举一致的效果（然而不是所有的特性在 JavaScript 中都有对应的实现）。
+
+下面我们通过如下所示示例看看将如上示例转译为 JavaScript 后的效果。
+
+```js
+var Day = void 0;
+(function (Day) {
+  Day[Day["SUNDAY"] = 0] = "SUNDAY";
+  Day[Day["MONDAY"] = 1] = "MONDAY";
+  Day[Day["TUESDAY"] = 2] = "TUESDAY";
+  Day[Day["WEDNESDAY"] = 3] = "WEDNESDAY";
+  Day[Day["THURSDAY"] = 4] = "THURSDAY";
+  Day[Day["FRIDAY"] = 5] = "FRIDAY";
+  Day[Day["SATURDAY"] = 6] = "SATURDAY";
+})(Day || (Day = {}));
+```
+
+我们可以看到 Day.SUNDAY 被赋予 0 作为值，Day.SATURDAY 被赋予 6 作为值。
+
+在 TypeScript 中，我们可以通过“枚举名字.常量命名”的格式获取枚举集合里的成员，如下代码所示：
+
+```ts
+function work(d: Day) {
+  switch (d) {
+    case Day.SUNDAY:
+    case Day.SATURDAY:
+      return 'take a rest';
+    case Day.MONDAY:
+    case Day.TUESDAY:
+    case Day.WEDNESDAY:
+    case Day.THURSDAY:
+    case Day.FRIDAY:
+      return 'work hard';
+  }
+}
+```
+
+示例中的第 3 行到第 10 行，我们通过 Day.SUNDAY 这样的格式就可以访问枚举的所有成员了。 上面示例中的 work 函数转译为 JavaScript 后，里面的 switch 分支运行时的效果实际上等价于如下所示代码：
+
+```js
+...
+switch (d) {
+  case 0:
+  case 1:
+  return 'take a rest';
+  case 2:
+  case 3:
+  case 4:
+  case 5:
+  case 6:
+  return 'work hard';
+}
+...
+```
+
+这就意味着在 JavaScript 中调用 work 函数时，传递的参数无论是 enum 还是数值，逻辑上将没有区别，当然这也符合 TypeScript 静态类型检测规则，如下代码所示：
+
+```ts
+work(Day.SUNDAY); // ok
+work(0); // ok
+```
+
+这里我们既可以把枚举成员 Day.SUNDAY 作为 work 函数的入参，也可以把数字字面量 0 作为 work 函数的入参。
+
+下面我们来看下 7 种常见的枚举类型：**数字类型、字符串类型、异构类型、常量成员和计算（值）成员、枚举成员类型和联合枚举、常量枚举、外部枚举**。
+
+## 数字类型
+
+从上边示例可知，在仅仅指定常量命名的情况下，我们定义的就是一个默认从 0 开始递增的数字集合，称之为数字枚举。
+
+如果我们希望枚举值从其他值开始递增，则可以通过“常量命名 = 数值” 的格式显示指定枚举成员的初始值，如下代码所示：
+
+```ts
+enum Day {
+  SUNDAY = 1,
+  MONDAY,
+  TUESDAY,
+  WEDNESDAY,
+  THURSDAY,
+  FRIDAY,
+  SATURDAY
+}
+```
+
+在上述示例中，我们指定了从 1 开始递增。
+
+事实上，我们可以给 SUNDAY 指定任意类型（比如整数、负数、小数等）、任意起始的数字，其后未显示指定值的成员会递增加 1。上边的示例转译为 JavaScript 之后，则是一个属性值从 1 开始递增的对象，如下代码所示：
+
+```ts
+var Day = void 0;
+(function (MyDay) {
+  Day[Day["SUNDAY"] = 1] = "SUNDAY";
+  Day[Day["MONDAY"] = 2] = "MONDAY";
+  ...
+  Day[Day["SATURDAY"] = 7] = "SATURDAY";
+})(Day || (Day = {}));
+```
+
+这里 Day.SUNDAY 被赋予了 1 作为值，Day.SATURDAY 则被赋予了 7 作为值。
+
+当然我们也可以给任意位置的成员指定值，如下所示示例：
+
+```ts
+enum Day {
+  SUNDAY,
+  MONDAY,
+  TUESDAY,
+  WEDNESDAY,
+  THURSDAY,
+  FRIDAY,
+  SATURDAY = 5
+} 
+```
+
+这里我们给最后一个成员 SATURDAY 指定了初始值 5，但转译后的结果就比较尴尬了，如下代码所示：
+
+```ts
+...
+Day[Day["FRIDAY"] = 5] = "FRIDAY";
+Day[Day["SATURDAY"] = 5] = "SATURDAY";
+...
+```
+
+我们可以看到 MyDay.FRIDAY 和 MyDay.SATURDAY 的值都是数字 5，这就导致使用 Day 枚举作为 switch 分支条件的函数 work，在接收 MyDay.SATURDAY 作为入参时，也会进入 MyDay.FRIDAY 的分支，从而出现逻辑错误。
+
+这个经验告诉我们，由于枚举默认的值自递增且完全无法保证稳定性，所以给部分数字类型的枚举成员显式指定数值或给函数传递数值而不是枚举类型作为入参都属于不明智的行为，如下代码所示：
+
+```ts
+enum Day {
+  ...
+  SATURDAY = 5 // bad
+} 
+work(5); // bad
+```
+
+此外，常量命名、结构顺序都一致的两个枚举，即便转译为 JavaScript 后，同名成员的值仍然一样（满足恒等 === ）。但在 TypeScript 看来，它们不相同、不满足恒等，如下代码所示：
+
+```ts
+enum MyDay {
+  SUNDAY,
+  ...
+} 
+
+Day.SUNDAY === MyDay.SUNDAY; // ts(2367) 两个枚举值恒不相等
+work(MyDay.SUNDAY); // ts(2345) 'MyDay.SUNDAY' 不能赋予 'Day'
+```
+
+这里的 MyDay 和上边的 Day 看似一样，但是如果我们拿 MyDay 和 Day 的成员进行比较（第 6 行），或者把 MyDay 传值给形参是 Day 类型的 work 函数（第 7 行），就会发现都会提示错误。
+
+不仅仅是数字类型枚举，所有其他枚举都仅和自身兼容，这就消除了由于枚举不稳定性可能造成的风险，所以这是一种极其安全的设计。不过，这可能会使得枚举变得不那么好用，因为不同枚举之间完全不兼容，所以不少 TypeScript 编程人员觉得枚举类型是一种十分鸡肋的类型。而两个结构完全一样的枚举类型如果互相兼容，则会更符合我们的预期，比如说基于 Swagger 自动生成的不同模块中结构相同且描述同一个常量集合的多个同名枚举。
+
+不过，此时我们可能不得不使用类型断言（as）或者重构代码将“相同“的枚举类型抽离为同一个公共的枚举（我们更推荐后者）。
+
+## 字符串枚举
+
+在 TypeScript 中，我们将定义值是字符串字面量的枚举称之为字符串枚举，字符串枚举转译为 JavaScript 之后也将保持这些值，我们来看下如下所示示例：
+
+```ts
+enum Day {
+  SUNDAY = 'SUNDAY',
+  MONDAY = 'MONDAY',
+  ...
+}
+```
+
+这里我们定义了成员 SUNDAY 的值是 'SUNDAY'、MONDAY 的值是 'MONDAY'。
+
+而上述示例转译为 JavaScript 后，Day.SUNDAY 的值依旧是 'SUNDAY'，Day.MONDAY 的值依旧是 'MONDAY'，如下代码所示：
+
+```ts
+var Day = void 0;
+(function (Day) {
+  Day["SUNDAY"] = "SUNDAY";
+  Day["MONDAY"] = "MONDAY";
+})(Day || (Day = {}));
+```
+
+相比于没有明确意义的递增值的数字枚举，字符串枚举的成员在运行和调试阶段，更具备明确的含义和可读性，枚举成员的值就是我们显式指定的字符串字面量。
+
+## 异构枚举（Heterogeneous enums）
+
+从技术上来讲，TypeScript 支持枚举类型同时拥有数字和字符类型的成员，这样的枚举被称之为异构枚举。
+
+当然，异构枚举也被认为是很“鸡肋”的类型。比如如下示例中，我们定义了成员 SUNDAY 是 'SUNDAY'、MONDAY 是 2，很抱歉，我也不知道这样的枚举能在哪些有用的场合进行使用。
+
+```ts
+enum Day {
+  SUNDAY = 'SUNDAY',
+  MONDAY = 2,
+  ...
+}
+```
+
+枚举成员的值既可以是数字、字符串这样的常量，也可以是通过表达式所计算出来的值。这就涉及枚举里成员的一个分类，即常量成员和计算成员。
+
+## 常量成员和计算（值）成员
+
+在前边示例中，涉及的枚举成员的值都是字符串、数字字面量和未指定初始值从 0 递增数字常量，都被称作常量成员。
+
+另外，在转译时，通过被计算的常量枚举表达式定义值的成员，也被称作常量成员，比如如下几种情况：
+
+- 引用来自预先定义的常量成员，比如来自当前枚举或其他枚举；
+
+- 圆括弧 () 包裹的常量枚举表达式；
+
+- 在常量枚举表达式上应用的一元操作符 +、 -、~ ；
+
+- 操作常量枚举表达式的二元操作符 +、-、*、/、%、<<、>>、>>>、&、|、^。
+
+
+除以上这些情况之外，其他都被认为是计算（值）成员。
+
+如下所示示例中，除了 G 是计算成员之外，其他都属于常量成员。
+
+```ts
+enum FileAccess {
+  // 常量成员
+  None,
+  Read = 1 << 1,
+  Write = 1 << 2,
+  ReadWrite = Read | Write,
+  // 计算成员
+  G = "123".length,
+}
+```
+
+**注意**：关于常量成员和计算成员的划分其实比较难理解，实际上它们也并没有太大的用处，只是告诉我们通过这些途径可以定义枚举成员的值。因此，我们只需记住缺省值（从 0 递增）、数字字面量、字符串字面量肯定是常量成员就够了。
+
+## 枚举成员类型和联合枚举
+
+对于不需要计算（值）的常量类型成员，即缺省值（从 0 递增）、数字字面量、字符串字面量这三种情况（这就是为什么我们只需记住这三种情况），被称之为字面量枚举成员。
+
+前面我们提到枚举值和类型是一体的，枚举成员的类型是枚举类型的子类型。
+
+**枚举成员和枚举类型之间的关系分两种情况：** 如果枚举的成员同时包含字面量和非字面量枚举值，枚举成员的类型就是枚举本身（枚举类型本身也是本身的子类型）；如果枚举成员全部是字面量枚举值，则所有枚举成员既是值又是类型，如下代码所示：
+
+```ts
+enum Day {
+  SUNDAY,
+  MONDAY,
+}
+enum MyDay {
+  SUNDAY,
+  MONDAY = Day.MONDAY
+}
+const mondayIsDay: Day.MONDAY = Day.MONDAY; // ok: 字面量枚举成员既是值，也是类型
+const mondayIsSunday = MyDay.SUNDAY; // ok: 类型是 MyDay，MyDay.SUNDAY 仅仅是值
+const mondayIsMyDay2: MyDay.MONDAY = MyDay.MONDAY; // ts(2535)，MyDay 包含非字面量值成员，所以 MyDay.MONDAY 不能作为类型
+```
+
+这里因为 Day 的所有成员都是字面量枚举成员，所以 Day.MONDAY 可以同时作为值和类型使用。但是 MyDay 的成员 MONDAY 是非字面量枚举成员（但是是常量枚举成员），所以 MyDay.MONDAY 仅能作为值使用。
+
+另外，如果枚举仅有一个成员且是字面量成员，那么这个成员的类型等于枚举类型，如下代码所示：
+
+```ts
+enum Day {
+  MONDAY
+}
+export const mondayIsDay: Day = Day.MONDAY; // ok
+export const mondayIsDay1: Day.MONDAY = mondayIsDay as Day; // ok
+```
+
+因为枚举 Day 仅包含一个字面量成员 MONDAY，所以类型 Day 和 Day.MONDAY 可以互相兼容。比如第 4 行和第 5 行，我们既能把 Day.MONDAY 类型赋值给 Day 类型，也能把 Day 类型赋值给 Day.MONDAY 类型。
+
+此外，回想字面量类型特性，不同成员的类型就是不同的字面量类型。纯字面量成员枚举类型也具有字面量类型的特性，也就等价于枚举的类型将变成各个成员类型组成的联合（枚举）类型。
+
+联合类型使得 TypeScript 可以更清楚地枚举集合里的确切值，从而检测出一些永远不会成立的条件判断（俗称 Dead Code），如下所示示例：
+
+```ts
+enum Day {
+  SUNDAY,
+  MONDAY,
+}
+
+const work = (x: Day) => {
+  if (x !== Day.SUNDAY || x !== Day.MONDAY) { // ts(2367)
+  }
+}
+```
+
+在上边示例中，TypeScript 确定 x 的值要么是 Day.SUNDAY，要么是 Day.MONDAY。因为 Day 是纯字面量枚举类型，可以等价地看作联合类型 Day.SUNDAY | Day.MONDAY，所以我们判断出第 7 行的条件语句恒为真，于是提示了一个 ts(2367) 错误。
+
+不过，如果枚举包含需要计算（值）的成员情况就不一样了。如下示例中，TypeScript 不能区分枚举 Day 中的每个成员。因为每个成员类型都是 Day，所以无法判断出第 7 行的条件语句恒为真，也就不会提示一个 ts(2367) 错误。
+
+```ts
+enum Day {
+  SUNDAY = +'1',
+  MONDAY = 'aa'.length,
+}
+
+const work = (x: Day) => {
+  if (x !== Day.SUNDAY || x !== Day.MONDAY) { // ok
+  }
+}
+```
+
+此外，字面量类型所具有的类型推断、类型缩小的特性，也同样适用于字面量枚举类型，如下代码所示：
+
+```ts
+enum Day {
+  SUNDAY,
+  MONDAY,
+}
+let SUNDAY = Day.SUNDAY; // 类型是 Day
+const SUNDAY2 = Day.SUNDAY; // 类型 Day.SUNDAY
+const work = (x: Day) => {
+  if (x === Day.SUNDAY) {
+    x; // 类型缩小为 Day.SUNDAY
+  }
+}
+```
+
+在上述代码中，我们在第 5 行通过 let 定义了一个未显式声明类型的变量 SUNDAY，TypeScript 可推断其类型是 Day；在第 6 行通过 const 定义了一个未显式声明类型的变量 SUNDAY2，TypeScript 可推断其类型是 Day.SUNDAY；在第 8 行的 if 条件判断中，变量 x 类型也从 Day 缩小为 Day.SUNDAY。
+
+## 常量枚举（const enums）
+
+枚举的作用在于定义被命名的常量集合，而 TypeScript 提供了一些途径让枚举更加易用，比如常量枚举。
+
+我们可以通过添加 const 修饰符定义常量枚举，常量枚举定义转译为 JavaScript 之后会被移除，并在使用常量枚举成员的地方被替换为相应的内联值，因此常量枚举的成员都必须是常量成员（字面量 + 转译阶段可计算值的表达式），如下代码所示：
+
+```ts
+const enum Day {
+  SUNDAY,
+  MONDAY
+}
+const work = (d: Day) => {
+  switch (d) {
+    case Day.SUNDAY:
+      return 'take a rest';
+    case Day.MONDAY:
+      return 'work hard';
+  }
+}
+```
+
+这里我们定义了常量枚举 Day，它的成员都是值自递增的常量成员，并且在 work 函数的 switch 分支里引用了 Day。
+
+转译为成 JavaScript 后，Day 枚举的定义就被移除了，work 函数中对 Day 的引用也变成了常量值的引用（第 3 行内联了 0、第 5 行内联了 1），如下代码所示：
+
+```js
+var work = function (d) {
+  switch (d) {
+    case 0 /* SUNDAY */:
+      return 'take a rest';
+    case 1 /* MONDAY */:
+      return 'work hard';
+  }
+}; 
+```
+
+从以上示例我们可以看到，使用常量枚举不仅能减少转译后的 JavaScript 代码量（因为抹除了枚举定义），还不需要到上级作用域里查找枚举定义（因为直接内联了枚举值字面量）。
+
+因此，通过定义常量枚举，我们可以以清晰、结构化的形式维护相关联的常量集合，比如 switch case分支，使得代码更具可读性和易维护性。而且因为转译后抹除了定义、内联成员值，所以在代码的体积和性能方面并不会比直接内联常量值差。
+
+## 外部枚举（Ambient enums）
+
+在 TypeScript 中，我们可以通过 declare 描述一个在其他地方已经定义过的变量，如下代码所示：
+
+```ts
+declare let $: any;
+$('#id').addClass('show'); // ok
+```
+
+第 1 行我们使用 declare 描述类型是 any 的外部变量 $，在第 2 行则立即使用 $ ，此时并不会提示一个找不到 $ 变量的错误。
+
+同样，我们也可以使用 declare 描述一个在其他地方已经定义过的枚举类型，通过这种方式定义出来的枚举类型，被称之为外部枚举，如下代码所示：
+
+```ts
+declare enum Day {
+  SUNDAY,
+  MONDAY,
+}
+const work = (x: Day) => {
+  if (x === Day.SUNDAY) {
+    x; // 类型是 Day
+  }
+}
+```
+
+这里我们认定在其他地方已经定义了一个 Day 这种结构的枚举，且 work 函数中使用了它。
+
+转译为 JavaScript 之后，外部枚举的定义也会像常量枚举一样被抹除，但是对枚举成员的引用会被保留（第 2 行保留了对 Day.SUNDAY 的引用），如下代码所示：
+
+```js
+var work = function (x) {
+    if (x === Day.SUNDAY) {
+        x;
+    }
+};
+```
+
+**外部枚举和常规枚举的差异在于以下几点：**
+
+- 在外部枚举中，如果没有指定初始值的成员都被当作计算（值）成员，这跟常规枚举恰好相反；
+
+- 即便外部枚举只包含字面量成员，这些成员的类型也不会是字面量成员类型，自然完全不具备字面量类型的各种特性。
+
+
+我们可以一起使用 declare 和 const 定义外部常量枚举，使得它转译为 JavaScript 之后仍像常量枚举一样。在抹除枚举定义的同时，我们可以使用内联枚举值替换对枚举成员的引用。
+
+外部枚举的作用在于为两个不同枚举（实际上是指向了同一个枚举类型）的成员进行兼容、比较、被复用提供了一种途径，这在一定程度上提升了枚举的可用性。
+
+
+
+# 泛型
+
+## ❓什么是泛型
+
+借用 Java 中泛型的释义来回答这个问题：泛型指的是类型参数化，即将原来某种具体的类型进行参数化。和定义函数参数一样，我们可以给泛型定义若干个类型参数，并在调用时给泛型传入明确的类型参数。设计泛型的目的在于有效约束类型成员之间的关系，比如函数参数和返回值、类或者接口成员和方法之间的关系。
+
+## 泛型类型参数
+
+泛型最常用的场景是用来约束函数参数的类型，我们可以给函数定义若干个被调用时才会传入明确类型的参数。
+
+比如以下定义的一个 reflect 函数 ，它可以接收一个任意类型的参数，并原封不动地返回参数的值和类型，那我们该如何描述这个函数呢？
+
+```ts
+function reflect(param: unknown) {
+  return param;
+}
+const str = reflect('string'); // str 类型是 unknown
+const num = reflect(1); // num 类型 unknown
+```
+
+此时，reflect 函数虽然可以接收一个任意类型的参数并原封不动地返回参数的值，不过返回值类型不符合我们的预期。因为我们希望返回值类型与入参类型一一对应（比如 number 对 number、string 对 string），而不是无论入参是什么类型，返回值一律是 unknown。
+
+此时，泛型正好可以满足这样的诉求，那如何定义一个泛型参数呢？首先，我们把参数 param 的类型定义为一个（类型层面的）参数、变量，而不是一个明确的类型，等到函数调用时再传入明确的类型。
+
+比如我们可以通过尖括号 <> 语法给函数定义一个泛型参数 P，并指定 param 参数的类型为 P ，如下代码所示：
+
+```ts
+function reflect<P>(param: P) {
+  return param;
+}
+```
+
+这里我们可以看到，尖括号中的 P 表示泛型参数的定义，param 后的 P 表示参数的类型是泛型 P（即类型受 P 约束）。
+
+我们也可以使用泛型显式地注解返回值的类型，虽然没有这个必要（因为返回值的类型可以基于上下文推断出来）。比如调用如下所示的 reflect 时，我们可以通过尖括号 <> 语法给泛型参数 P 显式地传入一个明确的类型。
+
+```ts
+function reflect<P>(param: P):P {
+  return param;
+}
+```
+
+然后在调用函数时，我们也通过 <> 语法指定了如下所示的 string、number 类型入参，相应地，reflectStr 的类型是 string，reflectNum 的类型是 number。
+
+```ts
+const reflectStr = reflect<string>('string'); // str 类型是 string
+const reflectNum = reflect<number>(1); // num 类型 number
+```
+
+另外，如果调用泛型函数时受泛型约束的参数有传值，泛型参数的入参可以从参数的类型中进行推断，而无须再显式指定类型（可缺省），因此上边的示例可以简写为如下示例：
+
+```ts
+const reflectStr2 = reflect('string'); // str 类型是 string
+const reflectNum2 = reflect(1); // num 类型 number
+```
+
+泛型不仅可以约束函数整个参数的类型，还可以约束参数属性、成员的类型，比如参数的类型可以是数组、对象，如下示例：
+
+```ts
+function reflectArray<P>(param: P[]) {
+  return param;
+}
+const reflectArr = reflectArray([1, '1']); // reflectArr 是 (string | number)[]
+```
+
+这里我们约束了 param 的类型是数组，数组的元素类型是泛型入参。
+
+通过泛型，我们可以约束函数参数和返回值的类型关系。举一个我们比较熟悉的实际场景 React Hooks useState 为例，如下示例中，第 2 行 return 的元组（因为 useState 返回的是长度为 2、元素类型固定的数组）的第一个元素的类型就是泛型 S，第二个函数类型元素的参数类型也是泛型 S。
+
+```ts
+function useState<S>(state: S, initialValue?: S) {
+  return [state, (s: S) => void 0] as unknown as [S, (s: S) => void];
+}
+```
+
+**注意：函数的泛型入参必须和参数/参数成员建立有效的约束关系才有实际意义。** 比如在下面示例中，我们定义了一个仅约束返回值类型的泛型，它是没有任何意义的。
+
+```ts
+function uselessGenerics<P>(): P {
+  return void 0 as unknown as P;
+}
+```
+
+我们可以给函数定义任何个数的泛型入参，如下代码所示：
+
+```ts
+function reflectExtraParams<P, Q>(p1: P, p2: Q): [P, Q] {
+  return [p1, p2];
+}
+```
+
+在上述代码中，我们定义了一个拥有两个泛型入参（P 和 Q）的函数 reflectExtraParams，并通过 P 和 Q 约束函数参数 p1、p2 和返回值的类型。
+
+## 泛型类
+
+在类的定义中，我们还可以使用泛型用来约束构造函数、属性、方法的类型，如下代码所示：
+
+```ts
+class Memory<S> {
+  store: S;
+  constructor(store: S) {
+    this.store = store;
+  }
+  set(store: S) {
+    this.store = store;
+  }
+  get() {
+    return this.store;
+  }
+}
+const numMemory = new Memory<number>(1); // <number> 可缺省
+const getNumMemory = numMemory.get(); // 类型是 number
+numMemory.set(2); // 只能写入 number 类型
+const strMemory = new Memory(''); // 缺省 <string>
+const getStrMemory = strMemory.get(); // 类型是 string
+strMemory.set('string'); // 只能写入 string 类型
+```
+
+首先，我们定义了一个支持读写的寄存器类 Memory，并使用泛型约束了 Memory 类的构造器函数、set 和 get 方法形参的类型，最后实例化了泛型入参分别是 number 和 string 类型的两种寄存器。
+
+泛型类和泛型函数类似的地方在于，在创建类实例时，如果受泛型约束的参数传入了明确值，则泛型入参（确切地说是传入的类型）可缺省，比如第 14 行、第 18 行，\<number>、\<string> 泛型入参就是可以缺省的。
+
+对于 React 开发者而言，组件也支持泛型，如下代码所示。
+
+```ts
+function GenericCom<P>(props: { prop1: string }) {
+  return <></>;
+};
+<GenericCom<{ name: string; }> prop1="1" ... />
+```
+
+在第 1 行~第 3 行，我们定义了一个泛型组件 GenericCom，它接收了一个类型入参 P。在第 4 行，通过 JSX 语法创建组件元素的同时，我们还显式指定了接口类型 { name: string } 作为入参。
+
+## 泛型类型
+
+上文中我们提到，我们可以使用 Array<类型> 的语法来定义数组类型，这里的 Array 本身就是一种类型。
+
+在 TypeScript 中，类型本身就可以被定义为拥有不明确的类型参数的泛型，并且可以接收明确类型作为入参，从而衍生出更具体的类型，如下代码所示：
+
+```ts
+const reflectFn: <P>(param: P) => P = reflect; // ok
+```
+
+这里我们为变量 reflectFn 显式添加了泛型类型注解，并将 reflect 函数作为值赋给了它。
+
+我们也可以把 reflectFn 的类型注解提取为一个能被复用的类型别名或者接口，如下代码所示：
+
+```ts
+type ReflectFuncton = <P>(param: P) => P;
+interface IReflectFuncton {
+  <P>(param: P): P
+}
+const reflectFn2: ReflectFuncton = reflect;
+const reflectFn3: IReflectFuncton = reflect;
+```
+
+将类型入参的定义移动到类型别名或接口名称后，此时定义的一个接收具体类型入参后返回一个新类型的类型就是泛型类型。
+
+如下示例中，我们定义了两个可以接收入参 P 的泛型类型（GenericReflectFunction 和 IGenericReflectFunction ）。
+
+```ts
+type GenericReflectFunction<P> = (param: P) => P;
+interface IGenericReflectFunction<P> {
+  (param: P): P;
+}
+const reflectFn4: GenericReflectFunction<string> = reflect; // 具象化泛型
+const reflectFn5: IGenericReflectFunction<number> = reflect; // 具象化泛型
+const reflectFn3Return = reflectFn4('string'); // 入参和返回值都必须是 string 类型
+const reflectFn4Return = reflectFn5(1); //  入参和返回值都必须是 number 类型
+```
+
+在泛型定义中，我们甚至可以使用一些类型操作符进行运算表达，使得泛型可以根据入参的类型衍生出各异的类型，如下代码所示：
+
+```ts
+type StringOrNumberArray<E> = E extends string | number ? E[] : E;
+type StringArray = StringOrNumberArray<string>; // 类型是 string[]
+type NumberArray = StringOrNumberArray<number>; // 类型是 number[]
+type NeverGot = StringOrNumberArray<boolean>; // 类型是 boolean
+```
+
+这里我们定义了一个泛型，如果入参是 number | string 就会生成一个数组类型，否则就生成入参类型。而且，我们还使用了与 JavaScript 三元表达式完全一致的语法来表达类型运算的逻辑关系
+
+**如果我们给上面这个泛型传入了一个 string | boolean 联合类型作为入参，将会得到什么类型呢？且看如下所示示例：**
+
+```ts
+type BooleanOrString = string | boolean;
+type WhatIsThis = StringOrNumberArray<BooleanOrString>; // 好像应该是 string | boolean ?
+type BooleanOrStringGot = BooleanOrString extends string | number ? BooleanOrString[] : BooleanOrString; //  string | boolean
+```
+
+> **分配条件类型（Distributive Conditional Types）**
+> 在条件类型判断的情况下（比如上边示例中出现的 extends），如果入参是联合类型，则会被拆解成一个个独立的（原子）类型（成员）进行类型运算。
+
+比如上边示例中的 string | boolean 入参，先被拆解成 string 和 boolean 这两个独立类型，再分别判断是否是 string | number 类型的子集。**因为 string 是子集而 boolean 不是，所以最终我们得到的 WhatIsThis 的类型是 boolean | string[]**。
+
+能接受入参的泛型类型和函数一样，都可以对入参类型进行计算并返回新的类型，像是在做类型运算。
+
+利用泛型，我们可以抽象封装出很多有用、复杂的类型约束。比如在 Redux Model 中约束 State 和 Reducers 的类型定义关系，我们可以通过如下所示代码定义了一个既能接受 State 类型入参，又包含 state 和 reducers 这两个属性的接口类型泛型，并通过 State 入参约束了泛型的 state 属性和 reducers 属性下 action 索引属性的类型关系。
+
+```ts
+interface ReduxModel<State> {
+  state: State,
+  reducers: {
+    [action: string]: (state: State, action: any) => State
+  }
+}
+```
+
+然后根据实际需要，我们传入了一个具体的 State 类型具象化 ReduxModel，并约束了一个实际的 model，如下代码所示：
+
+```ts
+type ModelInterface = { id: number; name: string };
+const model: ReduxModel<ModelInterface> = {
+  state: { id: 1, name: '乾元' }, //  ok 类型必须是 ModelInterface
+  reducers: {
+    setId: (state, action: { payload: number }) => ({
+      ...state,
+      id: action.payload // ok must be number
+    }),
+    setName: (state, action: { payload: string }) => ({
+      ...state,
+      name: action.payload // ok must be string
+    })
+  }
+}
+```
+
+在上述示例中，model 对象的 state 属性、reducers 属性的 setId、setName 方法的第一个参数 state 的类型都受到 ReduxModel 泛型入参 ModelInterface 的约束。
+
+<h4 style="color: red">注意：枚举类型不支持泛型。</h4>
+
+## 泛型约束
+
+前面提到了泛型就像是类型的函数，它可以抽象、封装并接收（类型）入参，而泛型的入参也拥有类似函数入参的特性。因此，我们可以把泛型入参限定在一个相对更明确的集合内，以便对入参进行约束。
+
+比如最前边提到的原封不动返回参数的 reflect 函数，我们希望把接收参数的类型限定在几种原始类型的集合中，此时就可以使用“泛型入参名 extends 类型”语法达到这个目的，如下代码所示：
+
+```ts
+function reflectSpecified<P extends number | string | boolean>(param: P):P {
+  return param;
+}
+reflectSpecified('string'); // ok
+reflectSpecified(1); // ok
+reflectSpecified(true); // ok
+reflectSpecified(null); // ts(2345) 'null' 不能赋予类型 'number | string | boolean'
+```
+
+在上述示例中，我们限定了泛型入参只能是 number | string | boolean 的子集。
+
+同样，我们也可以把接口泛型入参约束在特定的范围内，如下代码所示：
+
+```ts
+interface ReduxModelSpecified<State extends { id: number; name: string }> {
+  state: State
+}
+type ComputedReduxModel1 = ReduxModelSpecified<{ id: number; name: string; }>; // ok
+type ComputedReduxModel2 = ReduxModelSpecified<{ id: number; name: string; age: number; }>; // ok
+type ComputedReduxModel3 = ReduxModelSpecified<{ id: string; name: number; }>; // ts(2344)
+type ComputedReduxModel4 = ReduxModelSpecified<{ id: number;}>; // ts(2344)
+```
+
+在上述示例中，ReduxModelSpecified 泛型仅接收 { id: number; name: string } 接口类型的子类型作为入参。
+
+我们还可以在多个不同的泛型入参之间设置约束关系，如下代码所示：
+
+```ts
+interface ObjSetter {
+  <O extends {}, K extends keyof O, V extends O[K]>(obj: O, key: K, value: V): V; 
+}
+const setValueOfObj: ObjSetter = (obj, key, value) => (obj[key] = value);
+setValueOfObj({ id: 1, name: 'name' }, 'id', 2); // ok
+setValueOfObj({ id: 1, name: 'name' }, 'name', 'new name'); // ok
+setValueOfObj({ id: 1, name: 'name' }, 'age', 2); // ts(2345)
+setValueOfObj({ id: 1, name: 'name' }, 'id', '2'); // ts(2345)
+```
+
+在设置对象属性值的函数类型时，它拥有 3 个泛型入参：第 1 个是对象，第 2 个是第 1 个入参属性名集合的子集，第 3 个是指定属性类型的子类型。
+
+另外，泛型入参与函数入参还有一个相似的地方在于，它也可以给泛型入参指定默认值（默认类型），且语法和指定函数默认参数完全一致，如下代码所示：
+
+```ts
+interface ReduxModelSpecified2<State = { id: number; name: string }> {
+  state: State
+}
+type ComputedReduxModel5 = ReduxModelSpecified2; // ok
+type ComputedReduxModel6 = ReduxModelSpecified2<{ id: number; name: string; }>; // ok
+type ComputedReduxModel7 = ReduxModelSpecified; // ts(2314) 缺少一个类型参数
+```
+
+在上述示例中，我们定义了入参有默认类型的泛型 ReduxModelSpecified2，因此使用 ReduxModelSpecified2 时类型入参可缺省。而 ReduxModelSpecified 的入参没有默认值，所以缺省入参时会提示一个类型错误。
+
+泛型入参的约束与默认值还可以组合使用，如下代码所示：
+
+```ts
+interface ReduxModelMixed<State extends {} = { id: number; name: string }> {
+  state: State
+}
+```
+
+这里我们限定了泛型 ReduxModelMixed 入参 State 必须是 {} 类型的子类型，同时也指定了入参缺省时的默认类型是接口类型 { id: number; name: string; }。
