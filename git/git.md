@@ -49,3 +49,14 @@ git add .
 git commit -m "说明"
 git push
 ```
+
+## 克隆仓库
+
+```bash
+# 基础操作
+git clone [url]
+
+# 本地别名操作
+git clone [url] another-name
+```
+
