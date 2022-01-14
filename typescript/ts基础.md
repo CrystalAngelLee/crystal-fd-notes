@@ -315,9 +315,9 @@ if (typeof result === 'number') {
 
 首先我们来说一下 void 类型，它仅适用于表示没有返回值的函数。即如果该函数没有返回值，那它的类型就是 void。
 
-在 strict 模式下，声明一个 void 类型的变量几乎没有任何实际用处，因为我们不能把 void 类型的变量值再赋值给除了 any 和 unkown 之外的任何类型变量。
+在 strict 模式下，声明一个 void 类型的变量几乎没有任何实际用处，因为**我们不能把 void 类型的变量值再赋值给除了 any 和 unkown 之外的任何类型变量。反过来仅any、never、undefined可以赋值给void**
 
-然后我们说说 undefined 类型 和 null 类型，它们是 TypeScript 值与类型关键字同名的唯二例外。但这并不影响它们被称为“废柴”，因为单纯声明 undefined 或者 null 类型的变量也是无比鸡肋，示例如下所示：
+然后我们说说 undefined 类型 和 null 类型，它们是 TypeScript 值与类型关键字同名的唯二例外
 
 ```ts
 let undeclared: undefined = undefined; // 鸡肋
