@@ -49,3 +49,13 @@ git add .
 git commit -m "说明"
 git push
 ```
+
+## 删除 | 添加 远程源
+
+```bash
+# 删除远程源
+git remote remove origin
+# 新增源
+git remote add origin git@XXXX
+```
+
