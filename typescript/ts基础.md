@@ -106,6 +106,15 @@ let sym2: symbol = Symbol('42');
 
 实际上，我们压根使用不到 Number、String、Boolean、Symbol 类型，因为它们并没有什么特殊的用途。这就像我们不必使用 JavaScript Number、String、Boolean 等构造函数 new 一个相应的实例一样。
 
+```ts
+let num: number;
+let Num: Number;
+Num = num; // ok
+num = Num; // ts(2322)
+```
+
+**我们需要铭记不要使用对象类型来注解值的类型，因为这没有任何意义。**
+
 
 
 # 静态类型检测
