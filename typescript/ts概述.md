@@ -135,6 +135,8 @@ WebStorm 与 VS Code 相比，最大的优势在于开箱即用，这点可谓�
 
 全局安装TS  `npm i -g typescript`
 
+项目依赖安装 `yarn add typescript --dev`
+
 TypeScript 安装完成后，我们输入如下所示命令即可查看当前安装的 TypeScript 版本。
 
 ```bash
@@ -208,10 +210,19 @@ say('Hello, World');
 
 .ts 文件创建完成后，我们就可以使用 tsc（TypeScript Compiler） 命令将 .ts 文件转译为 .js 文件。
 
+```tex
+使用 tsc 命令后做的事情：
+1. 检查代码中的类型使用异常
+2. 移除掉类型注解扩展名 & 转换 EcmaScript 新特性
+3. 编译为 js 文件
+```
+
 **注意：指定转译的目标文件后，tsc 将忽略当前应用路径下的 tsconfig.json 配置，因此我们需要通过显式设定如下所示的参数，让 tsc 以严格模式检测并转译 TypeScript 代码。**
 
 ```bash
 tsc HelloWorld.ts --strict --alwaysStrict false
+# 安装在项目中的话，可以使用如下命令
+# yarn tsc HelloWorld.ts --strict --alwaysStrict false
 ```
 
 同时，我们可以给 tsc 设定一个 watch 参数监听文件内容变更，实时进行类型检测和代码转译，如下代码所示：
