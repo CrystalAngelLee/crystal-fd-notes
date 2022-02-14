@@ -70,3 +70,17 @@ git clone [url]
 # 本地别名操作
 git clone [url] another-name
 ```
+
+## 子仓库
+
+项目里包含子模块项目，需要依次clone下来（执行下列语句即可）
+
+   > 参考：https://www.jianshu.com/p/9000cd49822c
+
+ ```bash
+ # 初始化子模块
+ git submodule init
+ # 更新子模块
+ git submodule update
+ ```
+
