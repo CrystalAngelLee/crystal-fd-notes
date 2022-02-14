@@ -37,7 +37,7 @@ let num: number = 1;
 
 # 原始类型
 
-在 JavaScript 中，原始类型指的是非对象且没有方法的数据类型，它包括 string、number、bigint、boolean、undefined 和 symbol 这六种 **（null 是一个伪原始类型，它在 JavaScript 中实际上是一个对象，且所有的结构化类型都是通过 null 原型链派生而来）**。
+在 JavaScript 中，原始类型指的是非对象且没有方法的数据类型，它包括 `string、number、bigint、boolean、undefined 和 symbol `这六种 **（null 是一个伪原始类型，它在 JavaScript 中实际上是一个对象，且所有的结构化类型都是通过 null 原型链派生而来）**。
 
 在 JavaScript 语言中，原始类型值是最底层的实现，对应到 TypeScript 中同样也是最底层的类型。
 
@@ -91,12 +91,14 @@ let TypeScriptIsGreat: boolean = true;
 let TypeScriptIsBad: boolean = false;
 ```
 
+<p style="color:red; font-size: 24px;">非严格模式下， string、 number、boolean 允许值为空（null）。严格模式下则不允许</p>
+
 ## Symbol
 
 自 ECMAScript 6 起，TypeScript 开始支持新的`Symbol`原始类型， 即我们可以通过`Symbol`构造函数，创建一个独一无二的标记；同时，还可以使用`symbol`表示如下代码所示的类型。
 
 ```ts
-let sym1: symbol = Symbol();
+let sym1: symbol = Symbol(); 
 let sym2: symbol = Symbol('42');
 ```
 
@@ -173,7 +175,7 @@ arrayOfString.push(2); // 提示 ts(2345)、
 
 ## 元组类型（Tuple）
 
-元组最重要的特性是可以限制数组元素的个数和类型，它特别适合用来实现多值返回。
+元组最重要的特性是可以限制**数组元素的个数和类型**，它特别适合用来实现多值返回。
 
 我们熟知的一个使用元组的场景是 [React Hooks](https://reactjs.org/docs/hooks-intro.html?fileGuid=xxQTRXtVcqtHK6j8)，例如 useState 示例：
 
@@ -445,7 +447,7 @@ props.name = 1; // ts(2322)
 
 ### object
 
-object 类型表示非原始类型的类型，即非 number、string、boolean、bigint、symbol、null、undefined 的类型。
+object 类型表示**非原始类型的类型**，即非 number、string、boolean、bigint、symbol、null、undefined 的类型。
 
 ```ts
 declare function create(o: object | null): any;
@@ -486,7 +488,7 @@ const arrayNumber: number[] = [1, 2, 3, 4];
 const greaterThan2: number = <number>arrayNumber.find(num => num > 2);
 ```
 
-以上两种方式虽然没有任何区别，但是尖括号格式会与 JSX 产生语法冲突，因此我们更推荐使用 as 语法。
+以上两种方式虽然没有任何区别，但是尖括号格式会与 JSX 产生语法冲突，因此我们**更推荐使用 as 语法**。
 
 > 注意：类型断言的操作对象必须满足某些约束关系，否则我们将得到一个 ts(2352) 错误，即从类型“源类型”到类型“目标类型”的转换是错误的，因为这两种类型不能充分重叠。
 
@@ -1313,7 +1315,7 @@ const dog = new Dog('Q');
 dog.bark(); // => 'Woof! Woof!'
 ```
 
-首先，我们定义了一个 class Dog ，它拥有 string 类型的 name 属性（见第 2 行）、bark 方法（见第 7 行）和一个构造器函数（见第 3 行）。然后，我们通过 new 关键字创建了一个 Dog 的实例，并把实例赋值给变量 dog（见 12 行）。最后，我们通过实例调用了类中定义的 bark 方法（见 13 行）。
+首先，我们定义了一个 class Dog ，它拥有 string 类型的 name 属性、bark 方法和一个构造器函数。然后，我们通过 new 关键字创建了一个 Dog 的实例，并把实例赋值给变量 dog。最后，我们通过实例调用了类中定义的 bark 方法。
 
 如果使用传统的 JavaScript 代码定义类，我们需要使用函数+原型链的形式进行模拟，如下代码所示：
 
