@@ -1,6 +1,7 @@
 # Git 基本使用
 
 ## 分支创建及提交
+
 ```bash
 # 创建分支
 git checkout -b ***
@@ -9,10 +10,11 @@ git push --set-upstream origin ***
 ```
 
 ## 删除分支
+
 ```bash
 # 删除远程分支
 git push origin --delete ***
-# 删除本地分支 
+# 删除本地分支
 git branch -d <BranchName>
 ```
 
@@ -50,6 +52,15 @@ git commit -m "说明"
 git push
 ```
 
+## 删除 | 添加 远程源
+
+````bash
+# 删除远程源
+git remote remove origin
+# 新增源
+git remote add origin git@XXXX
+````
+
 ## 克隆仓库
 
 ```bash
@@ -59,4 +70,17 @@ git clone [url]
 # 本地别名操作
 git clone [url] another-name
 ```
+
+## 子仓库
+
+项目里包含子模块项目，需要依次clone下来（执行下列语句即可）
+
+   > 参考：https://www.jianshu.com/p/9000cd49822c
+
+ ```bash
+ # 初始化子模块
+ git submodule init
+ # 更新子模块
+ git submodule update
+ ```
 
