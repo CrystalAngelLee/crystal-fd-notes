@@ -32,3 +32,121 @@
 
 
 **loader 是什么**
+
+```tex
+webpack4 中对于loader的使用分为三种形式
+1. 行内 loader
+2. 配置文件中的 loader
+3. 命令行（cli 工具）中使用的 loader（webpack5 不建议使用！！）
+```
+
+### css-loader
+
+> 将 CSS 语法处理为 JS 可以使用的模块类型，不能将样式放在界面上进行使用
+
+**安装依赖：** `yarn add css-loader --dev`
+
+**行内loader使用：**
+
+```js
+import "css-loader!../css/login.css"
+
+function login() {
+  ...
+}
+```
+
+**配置文件中的 loader使用：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/, // 一般就是一个正则表达式，用于匹配我们需要处理的文件类型
+        use: [
+          {
+            loader: 'css-loader'
+          }
+        ]
+      },
+      // 简写方式 一
+      {
+        test: /\.css$/,
+        loader: 'css-loader'
+      },
+      // 简写方式 二
+      {
+        test: /\.css$/,
+        use: ['css-loader']
+      },
+    ]
+  }
+}
+```
+
+### style-loader
+
+> 让 css-loader 处理之后的 css 能在界面上展示出来
+> 作用：生成一个 style 标签
+
+**安装依赖：** `yarn add style-loader --dev`
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: ['style-loader', 'css-loader']
+      },
+    ]
+  }
+}
+```
+
+### less-loader
+
+> less-loader 中使用 less 将 less 转换为 css，所以需要同时依赖 less
+
+**安装依赖：** `yarn add less less-loader --dev`
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.less$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: ['style-loader', 'css-loader', 'less-loader']
+      }
+    ]
+  }
+}
+```
+
+
+
+## Browserslistrc 工作流程
