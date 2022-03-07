@@ -147,6 +147,176 @@ module.exports = {
 }
 ```
 
+### postcss-loader
 
+#### Browserslistrc 工作流程
 
-## Browserslistrc 工作流程
+在 package.json 中配置
+
+![image-20220307150450589](./images/broserlistrc应用实例.png)
+
+或创建 .browserslistrc 文件配置
+
+```json
+>0.2%
+last 2 version
+not dead
+```
+
+针对以上实例的配置，我们接下来描述一下其原理。
+
+```tex
+当前我们在做前端开发的时候，大多采用的都是工程化的方式；
+面对兼容性的问题（CSS新特性 JS新特性 不同平台的支持不同），我们分解开来就是
+1. 如何实现兼容： babel processenv
+2. 到底要兼容哪些平台: 项目针对性平台 或 市场主流平台 - caniuse.com（(到这里查看市场占有率)[https://caniuse.com/usage-table]）
+
+node_modules/browserslist/index.js
+当我们用脚手架创建完了一个项目后，默认会帮我们安装好 browserlist. browserlist 在工作的时候会调用 caniuse 的 lite 工具，到 caniuse.com 发送请求，得到相应数据后结合相应配置做兼容性的处理
+```
+
+测试指令（mac 电脑下可以添加相应条件）
+
+```bash
+# 逗号表示或者的意思，市场占有率大于 1% 或者某一个平台的最新2个版本
+npx browserlist ">1%, last 2 version" 
+```
+
+#### postcss 工作流程
+
+> 针对 CSS 的兼容性处理，我们可以使用 postcss
+> postcss 是通过 javascript 转换样式的工具
+
+**安装**： `npm i postcss postcss-cli -D`
+
+postcss-cli 的安装就是为了可以在命令行终端使用postcss相关指令
+
+`npx postcss -o ret.css .src/css/test.css`
+
+**安装自动添加前缀的插件**： `npm i autoprefixer -D`
+
+`npx postcss --use autoprefixer -o ret.css .src/css/test.css`
+
+#### postcss-loader
+
+**安装依赖：** `yarn add postcss-loader --dev`
+
+postcss 在 css-loader 之前进行工作
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: [
+          'style-loader', 
+          'css-loader', 
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  require('autoprefixer')
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**新需求**
+
+兼容 color: #12345678 的写法特性
+
+可以使用 postcss-preset-env 插件集进行处理
+
+**安装依赖**： `yarn add postcss-preset-env -D`
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: [
+          'style-loader', 
+          'css-loader', 
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                // 写法一
+                plugins: [
+                  require('autoprefixer'),
+                  require('postcss-preset-env')
+                ]
+                // 简写
+                plugins: ['postcss-preset-env']
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**配置简写：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: [
+          'style-loader', 
+          'css-loader', 
+          'postcss-loader'
+        ]
+      },
+      {
+        test: /\.less$/,
+        // 执行顺序 从右/下往左/上 执行
+        use: ['style-loader', 'css-loader', 'postcss-loader', 'less-loader']
+      }
+    ]
+  }
+}
+```
+
+**新建文件 postcss.config.js**
+
+```js
+module.exports = {
+  plugins: [
+    require('postcss-preset-env')
+  ]
+}
+```
+
