@@ -25,6 +25,68 @@
 - webpack5 支持零配置使用
 - 想要自定义修改webpack配置相关内容可以通过参数的形式进行处理（比如修改配置文件名为a.js, 命令修改为 webpack --config a.js即可）
 
+## asset module type
+
+> webpack5 处理资源内置模块
+> asset/resource 相当于 file-loader 实现
+> asset/inline 相当于 url-loader 实现
+> asset/source 相当于 raw-loader 实现
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  output: {
+    filename: 'main.js',
+    path: path.resolve(__dirname, 'dist'),
+    // asset 的全局处理
+    assetModuleFilename: 'img/[name].[hash:4][ext]'
+  },
+  module: {
+    rules: [
+      ...
+      // asset/resource 使用
+      {
+        test: /\.(png|svg|gif|jpe?g)$/,
+        type: "asset/resource",
+        generator: {
+          filename: 'img/[name].[hash:4][ext]'
+        }
+      },
+      // asset/inline 使用
+      {
+        test: /\.(png|svg|gif|jpe?g)$/,
+        type: "asset/inline"
+      },
+      {
+        test: /\.(png|svg|gif|jpe?g)$/,
+        type: "asset",
+        generator: {
+          filename: 'img/[name].[hash:4][ext]'
+        },
+        parser: {
+          dataUrlCondition: {
+            maxSize: 30 * 1024 
+          }
+        }
+      },
+      /* asset 对图标字体的处理 */
+      {
+        test: /\.(ttf|woff2?)$/,
+        // 直接做拷贝处理即可
+        type: "asset/resource",
+        generator: {
+          filename: 'font/[name].[hash:3][ext]'
+        },
+      }
+    ]
+  }
+}
+```
+
+
+
 ## Loader
 
 **为什么需要loader**
@@ -39,6 +101,10 @@ webpack4 中对于loader的使用分为三种形式
 2. 配置文件中的 loader
 3. 命令行（cli 工具）中使用的 loader（webpack5 不建议使用！！）
 ```
+
+**功能**
+
+对特定的模块类型进行转换
 
 ### css-loader
 
@@ -84,6 +150,46 @@ module.exports = {
         test: /\.css$/,
         use: ['css-loader']
       },
+    ]
+  }
+}
+```
+
+#### importLoaders 属性
+
+将 CSS 文件分成两个部分处理，处理完成之后使用 @import 引入使用，此时会发现打包出来的样式是不正确的
+
+```tex
+1. login.css @import 语句导入了 test.css
+2. login.css 可以匹配，当他被匹配到之后就是 postcss-loader 进行工作
+3. 基于当前的代码，postcss-loader 拿到了 login.css 当中的代码之后，分析基于我们的筛选条件并不需要做额外的处理
+4. 最终就将代码直接交给了 css-loader
+5. 此时 css-loader 可以处理 @import media url... 这时候它又拿到了 test.css 文件，但是loader不会回头找（不会再次使用 postcss-loader）
+6. 最终将处理好的 css 代码交给 style-loader 进行展示
+```
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          'style-loader', 
+          {
+            loader: 'css-loader',
+            options: {
+              importLoaders: 1, // 当css-loader工作时，如果又找到了需要处理的css文件，就往前找 “一个” Loader(找到 postcss-loader)
+              esModule: false  // 处理背景图片资源文件
+            }
+          }, 
+          'postcss-loader'
+        ]
+      }
     ]
   }
 }
@@ -316,6 +422,129 @@ module.exports = {
 module.exports = {
   plugins: [
     require('postcss-preset-env')
+  ]
+}
+```
+
+### file-loader
+
+> 处理图片
+> 把图片的名称或路径返回，将相应的图片资源拷贝到打包路径下
+
+**安装依赖：** `yarn add file-loader --dev`
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  /**
+   * 放置匹配规则 以及 相应规则下需要添加的属性和属性值
+  */
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.(png|svg|gif|jpe?g)$/,
+        // esModule 形式 require 引入需要结构到 .default 属性
+        use: [
+          {
+            loader: 'file-loader',
+            // 使用 import 方式使用就不需要这步配置了
+            options: {
+              esModule: false, // 不转为 esModule
+              /**
+               * 占位说明
+               * [ext] 扩展名（和打包之前一样）
+               * [name] 文件名（和打包之前一样）
+               * [hash] 以文件的内容和md算法生成128位哈希值
+               * [contentHash] 和使用 hash 结果一样
+               * [hash:<length>] 可以限制生成哈希文件名的长度
+               * [path] 配置文件路径
+              */
+              name: '[name].[hash:6].[ext]', // 图片名称
+              outputPath: 'img' // 输出文件路径
+              // 简写处理
+              name: 'img/[name].[hash:6].[ext]'
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### url-loader
+
+> 处理图片
+> 将要打包的图片资源以base64URI 的方式加载到代码中
+> 相比 file-loader 的好处是减少了请求的次数
+> 缺点是如果图片资源很大，请求时间就会增加
+
+**安装依赖：** `yarn add url-loader --dev`
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.(png|svg|gif|jpe?g)$/,
+        use: [
+          {
+            loader: 'url-loader',
+            // 使用 import 方式使用就不需要这步配置了
+            options: {
+              esModule: false, // 不转为 esModule
+              // 简写处理
+              name: 'img/[name].[hash:6].[ext]',
+              limit: 25 * 1024 // 超过 25 kb 就使用 file-loader
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## plugins
+
+### clean-webpack-plugin
+
+> 自动清除打包过后的目录
+
+**安装依赖：** `yarn add clean-webpack-plugin --dev`
+
+**配置：**
+
+```js
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+module.exports = {
+  // ... 
+  plugins: [
+    new CleanWebpackPlugin()
+  ]
+}
+```
+
+### Html-webpack-plugin
+
+**安装依赖：** `yarn add html-webpack-plugin --dev`
+
+**配置：**
+
+```js
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+module.exports = {
+  // ... 
+  plugins: [
+    // ...
+    new HtmlWebpackPlugin()
   ]
 }
 ```
