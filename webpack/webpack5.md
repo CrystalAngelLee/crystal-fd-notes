@@ -702,6 +702,179 @@ package.json
 
 ⭐️ webpack dev server 对文件的操作在内存中
 
+## [webpack-dev-middleware](https://webpack.js.org/guides/development/#using-webpack-dev-middleware)
+
+> 作为自由度更高的本地服务器中间件提供
+> 思路： 在本地开启一个服务，将webpack打包后的结果交给服务让浏览器访问即可
+
+**安装：** `yarn add webpack-dev-middleware express`
+
+**使用案例：**
+
+```js
+// server.js
+const express = require('express');
+const webpack = require('webpack');
+const webpackDevMiddleware = require('webpack-dev-middleware');
+
+const app = express();
+const config = require('./webpack.config.js');
+const compiler = webpack(config);
+
+// Tell express to use the webpack-dev-middleware and use the webpack.config.js
+// configuration file as a base.
+app.use(
+  webpackDevMiddleware(compiler, {
+    publicPath: config.output.publicPath,
+  })
+);
+
+// Serve the files on port 3000.
+app.listen(3000, function () {
+  console.log('Example app listening on port 3000!\n');
+});
+```
+
+## HMR
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  target: 'web',
+  // 如果在开发模式下，有 browserlist 配置的情况下会产生冲突，可以加上 target: 'web' 的配置做处理
+  devServer: {
+    hot: true // 默认还是刷新整个页面
+  }
+}
+```
+
+**使用：**
+
+```js
+/* index.js */
+import './other'
+
+if (module.hot) {
+  module.hot.accept(['./other.js', '...'], () => {
+    // to do other things..
+  })
+}
+```
+
+### React 支持 HMR
+
+**安装依赖：**
+
+```bash
+yarn add @babel/preset-react @pmmmwh/react-refresh-webpack-plugin react-refresh --dev
+```
+
+配置：
+
+```js
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+module.exports = {
+  // ... 
+  target: 'web',
+  // 如果在开发模式下，有 browserlist 配置的情况下会产生冲突，可以加上 target: 'web' 的配置做处理
+  devServer: {
+    hot: true // 默认还是刷新整个页面
+  }
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.jsx?$/,
+        exclude: '/node_modules/', // 不要处理 node_modules 下的文件 || 不要被 node_modules 下的文件 进行处理
+        use: ['babel-loader']
+      }
+    ]
+  },
+  plugins: [
+    // ...
+    new ReactRefreshWebpackPlugin()
+  ]
+}
+```
+
+babel.config.js
+
+```js
+module.exports = {
+  presets: [
+    ['@babel/preset-env'],
+    ['@babel/preset-react']
+  ],
+  plugins: [
+    ['react-refresh/babel']
+  ]
+}
+```
+
+### Vue 支持 HMR
+
+**安装依赖：**
+
+```bash
+# vue-loader 注意版本的匹配
+yarn add vue-template-compiler vue-loader@14  --dev
+# 安装 vue2 版本
+yarn add vue 
+```
+
+vue-loader@16 适配于 vue3
+
+配置：
+
+```js
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+module.exports = {
+  // ... 
+  target: 'web',
+  // 如果在开发模式下，有 browserlist 配置的情况下会产生冲突，可以加上 target: 'web' 的配置做处理
+  devServer: {
+    hot: true // 默认还是刷新整个页面
+  }
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.vue$/,
+        use: ['vue-loader']
+      }
+    ]
+  }
+}
+```
+
+```js
+// vue-loader@15 版本
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+module.exports = {
+  // ... 
+  target: 'web',
+  // 如果在开发模式下，有 browserlist 配置的情况下会产生冲突，可以加上 target: 'web' 的配置做处理
+  devServer: {
+    hot: true // 默认还是刷新整个页面
+  }
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.vue$/,
+        use: ['vue-loader']
+      }
+    ]
+  },
+  plugins: [
+    // ...
+    new VueLoaderPlugin()
+  ]
+}
+```
+
 
 
 # 附
