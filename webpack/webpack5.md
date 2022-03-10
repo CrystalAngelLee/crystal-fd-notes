@@ -512,6 +512,85 @@ module.exports = {
 }
 ```
 
+### babel-loader
+
+**安装依赖：** `yarn add babel-loader --dev`
+
+**配置：**
+
+```js
+module.exports = {
+  // ... 
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.js$/,
+        exclude: '/node_modules/', // 不要处理 node_modules 下的文件 || 不要被 node_modules 下的文件 进行处理
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              // 或者使用 plugins: [...插件]
+              presets: [
+                '@babel/preset-env',
+                {
+                  // 针对 ** 平台做转换，在和 browserslist 同时存在的情况下，最终以当前配置为主作用
+                  // 建议都写在配置文件中
+                  targets: 'chrome 91'
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**babelloader 相关配置**
+
+- babel.config.js(json cjs mjs)
+
+  ```js
+  module.exports = {
+    presets: [
+      '@babel/preset-env'
+    ]
+  }
+  ```
+
+- .babelrc.json(js cjs mjs)【babel7之前使用的更多】
+
+#### ployfill 配置
+
+> Webpack5 之前不需要我们自己处理 ployfill 为了优化打包速度 webpack5 将这部分内容进行抽离
+> ployfill: 对功能进行填充，比如我们写了一个 Promise 函数，当前项目需要支持在IE78 上进行支持，但是IE78版本并不支持 promise 方法，此时就需要自动填充(plofill)一个 promise 函数出来
+
+**安装：** `npm i core-js regenerator-runtime`
+
+**配置：** 到 `babel-loader` 中进行配置
+
+babel.config.js(json cjs mjs)
+
+```js
+module.exports = {
+  presets: [
+    '@babel/preset-env',
+    {
+      // 默认值： false -> 不对当前的JS做polyfill 填充
+      // usage: 根据源代码中使用情况做填充
+      // entry: 依据筛选出来的浏览器进行填充
+      useBuiltIns: 'entry',
+      corejs: 3 // 默认版本为2 版本设置为3
+    }
+  ]
+}
+```
+
+
+
 ## plugins
 
 ### clean-webpack-plugin
@@ -534,18 +613,121 @@ module.exports = {
 
 ### Html-webpack-plugin
 
+> 打包后会在打包目录下自动创建一个 index.html 文件
+
 **安装依赖：** `yarn add html-webpack-plugin --dev`
 
 **配置：**
 
 ```js
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const { DefinePlugin } = require('webpack')
 module.exports = {
   // ... 
   plugins: [
     // ...
-    new HtmlWebpackPlugin()
+    new HtmlWebpackPlugin({
+      title: 'demo',
+      template: './public/index.html' // 模板路径
+    }),
+    // 常量定义
+    new DefinePlugin({
+      BASE_URL: '"./"'
+    })
   ]
 }
+```
+
+### copy-webpack-plugin
+
+**安装依赖：** `yarn add copy-webpack-plugin --dev`
+
+**配置：**
+
+```js
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+module.exports = {
+  // ... 
+  plugins: [
+    // ...
+    new CopyWebpackPlugin({
+      // 拷贝配置项
+      patterns: [
+        {
+          from: 'public',
+          // to: 'dist'// 可以不写，不写的话会默认查找 output 输出目录
+          globOptions: {
+            // 忽略规则（忽略掉不需要拷贝的内容）
+            ignore: [
+              '**/index.html' // 从当前文件夹（public）下查找
+            ]
+          }
+        }
+      ]
+    })
+  ]
+}
+```
+
+## webpack-dev-server
+
+> 搭建本地服务器
+> 期望：当项目文件内容发生改变后自动完成编译并刷新浏览器
+
+**期望实现方案一： 配置 --watch + vscode live server 插件**
+
+和 webpack dev server 比较不足之处
+
+1. 所有源码都会重新编译
+2. 每次编译成功之后都需要进行文件读写（对性能影响较大）
+3. 不能实现局部刷新
+
+**安装：** `yarn add webpack-dev-server --dev`
+
+**使用**
+
+package.json
+
+```json
+// 配置相关指令
+{
+  "scripts": {
+    // 不配置 --config 的话默认查找 webpack.config.js
+    "serve": "webpack serve --config dev.webpack.js"
+  }
+}
+```
+
+执行 `yarn serve` 命令即可
+
+⭐️ webpack dev server 对文件的操作在内存中
+
+
+
+# 附
+
+## babel 的使用
+
+**为什么需要babel?**
+
+项目中可能会使用到 jsx, ts, es6+ 新特性的语法 等，这些特性在浏览器平台是不可以被直接使用的；这时候需要 babel 来帮助我们处理 JS 的兼容问题。
+
+**安装**
+
+```bash
+# 核心模块: 源代码转换
+npm i @babel/core -D
+# 支持命令行操作 
+# npx babel src(查找目录) --out-dir build(输出目录)
+npm i @babel/cli -D
+# 转换 箭头函数 的工具包
+# npx babel src(查找目录) --out-dir build(输出目录) --plugins=@babel/plugin-transform-arrow-functions
+npm i @babel/plugin-transform-arrow-functions -D
+# 转换 const 作用域声明 的工具包(将 const 和 let 转换成 var)
+# npx babel src(查找目录) --out-dir build(输出目录) --plugins=@babel/plugin-transform-arrow-functions,@babel/plugin-transform-block-scoping
+npm i @babel/plugin-transform-block-scoping -D
+# 工具集 安装
+# npx babel src(查找目录) --out-dir build(输出目录) --presets=@babel/preset-env
+npm i @babel/preset-env -D
 ```
 
