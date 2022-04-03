@@ -25,6 +25,40 @@
 - webpack5 支持零配置使用
 - 想要自定义修改webpack配置相关内容可以通过参数的形式进行处理（比如修改配置文件名为a.js, 命令修改为 webpack --config a.js即可）
 
+## path
+
+```js
+module.exports = {
+  /* 1. output 中的 path */
+  output: {
+    filename: 'main.js',
+    // 将来打包后的结果输出的目录,用于本地访问资源
+    path: path.resolve(__dirname, 'dist'),
+    // 默认为空字符串：index.html 内部的引用路径
+    // 规则想当于资源查找路径为：域名 + publicPath + filename
+    // 如果这里写成 '/',回导致本地查找不到资源，可以改为'./'(从绝对路径改为相对路径，但是在devServer 下会访问不到)
+    publicPath: ''
+  },
+  /* 2. devServer 中的 path */
+  // 建立本地开发服务
+  devServer: {
+    // 指定本地服务所在的目录，默认为 '/'(当前项目所在的目录)
+    // 通过devServer对资源进行访问
+    publicPath: '/',
+    // 对于直接访问打包后的资源来说，设置 contentBase 的值的意义不是很大
+    // 打包之后的资源如果依赖了其他的资源，告知去哪找
+    // 写绝对路径
+    contentBase: path.resolve(__dirname, 'public'),
+    // 监听contentBase中的内容更改
+    watchContentBase: true
+  }
+}
+```
+
+假设将devServer的publicPath改为`/demo` ，此时打开网址会发现资源是没有加载出来的。原因是：资源查找会从服务器 `/demo` 目录下进行查找，但是我们的资源是打包到了 output 下的 publicPath 下查找的（有冲突啦~~）。所以可以将output下的publicPath改为 `/demo`
+
+contentBase：比如有一些资源不需要打包，想要直接进行访问，在index.html 中进行了直接引用，可以使用contentBase 进行查找
+
 ## asset module type
 
 > webpack5 处理资源内置模块
