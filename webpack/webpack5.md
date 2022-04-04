@@ -909,6 +909,24 @@ module.exports = {
 }
 ```
 
+## [devServer 常用配置](https://webpack.docschina.org/configuration/dev-server/#devserver)
+
+```json
+devServer: {
+  hot: true, // 默认还是刷新整个页面
+  // 比如在整个页面的某个组件发生了错误后，会将整个页面进行刷新，这种体验感是不好的，我们只希望刷新当前组件即可，这时候可以将hotOnly 打开
+  hotOnly: true,
+  // 指定在某个端口开启服务，默认为8080
+  port: 4000,
+  // 可以自动帮我们打开浏览器：每一次更新都会打开一个浏览器窗口
+  open: true,
+  // 开启服务端的gzip压缩: 默认为false
+  compress: true,
+  // 将路由转为前端处理
+  historyApiFallback: true
+}
+```
+
 
 
 # 附
