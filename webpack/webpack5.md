@@ -923,11 +923,47 @@ devServer: {
   // 开启服务端的gzip压缩: 默认为false
   compress: true,
   // 将路由转为前端处理
-  historyApiFallback: true
+  historyApiFallback: true,
+  // proxy 代理设置
+  proxy: {
+    // 所有以api开头的接口都走代理设置
+    '/api': {
+      // 转到对应服务下请求数据
+      target: 'https://api.**.com',
+      // 对 /api 进行重写
+      // 服务器下可能没有 /api 的接口，需要根据服务器下需要的规则转换
+      pathRewrite: {
+        '^/api': ''
+      },
+      // 建议改为 true
+      changeOrigin: true
+    }
+  }
 }
 ```
 
+## [resolve 模块解析规则](https://webpack.docschina.org/configuration/resolve/#resolve)
 
+```js
+module.exports = {
+  //...
+  resolve: {
+    extensions: ['.js', '.json', '.wasm'],
+    mainFiles: ['index'],
+  },
+};
+```
+
+**resolve 解析规则：**
+
+1. 相对路径：按照当前文件上下文进行查找
+2. 模块名称：从 `node_modules` 下查找（resolve.modules 可以进行扩展）
+3. 绝对路径：直接查找
+
+**相对路径文件查找规则：**
+
+1. 如果匹配到文件，查找对应的文件扩展名，如果没有文件扩展名，从 `extensions` 中进行匹配查找
+2. 如果匹配到文件夹，从 `mainFiles` 中进行匹配文件，匹配到文件后，到第一步，匹配文件路径
 
 # 附
 
