@@ -623,7 +623,76 @@ module.exports = {
 }
 ```
 
+#### 编译 TS
 
+> 好处：如果使用了新的语法可以做填充操作
+> 语法存在错误的情况依然可以正常打包：优化-在打包之前执行 tsc 校验
+
+**配置**
+
+```js
+module.exports = {
+  // ... 
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.ts$/,
+        use: ['babel-loader']
+      }
+    ]
+  }
+}
+```
+
+babel.config.js(json cjs mjs)
+
+```js
+module.exports = {
+  presets: [
+    ['@babel/preset-env', {
+      useBuiltIns: 'useage', // 填充
+      corejs: 3 // 版本设定
+    }],
+   	['@babel/preset-typescript']
+  ]
+}
+```
+
+**优化处理打包操作：**
+
+```json
+"script": {
+  "build": "npm run tsc && webpack",
+  "tsc": "tsc --noEmit"
+}
+```
+
+
+
+### ts-loader
+
+> 编译TS
+> 语法存在错误的情况不可以正常打包（在编译阶段发现错误）
+
+**安装：** `npm i ts-loader typescript -D`
+
+**配置**:
+
+```js
+module.exports = {
+  // ... 
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.ts$/,
+        use: ['ts-loader']
+      }
+    ]
+  }
+}
+```
 
 ## plugins
 
@@ -1013,6 +1082,8 @@ module.exports = {
 | `hidden-source-map`                        | **build**: slowest  **rebuild**: slowest | yes        | original       | no reference. Possible choice when using SourceMap only for error reporting purposes. |
 
 **开发阶段：** source-map 或 cheap-source-map
+
+
 
 # 附
 
