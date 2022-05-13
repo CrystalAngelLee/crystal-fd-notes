@@ -694,6 +694,39 @@ module.exports = {
 }
 ```
 
+
+
+### vue-loader
+
+> 加载 vue 文件
+
+**安装：** `npm i vue-loader vue vue-template-compiler -D`
+
+**说明：** 如果安装的`vue-loader`是14的版本，加载的时候直接使用 `vue-loader` 即可，不需要手动加载 `VueLoaderPlugin` 插件；如果安装的`vue-loader`是16的版本（针对vue3）
+
+**配置**:
+
+```js
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+module.exports = {
+  // ... 
+  module: {
+    rules: [
+      ...
+      {
+        test: /\.vue$/,
+        use: ['vue-loader']
+      }
+    ]
+  },
+  plugins: [
+    new VueLoaderPlugin()
+  ]
+}
+```
+
+
+
 ## plugins
 
 ### clean-webpack-plugin
@@ -1082,6 +1115,10 @@ module.exports = {
 | `hidden-source-map`                        | **build**: slowest  **rebuild**: slowest | yes        | original       | no reference. Possible choice when using SourceMap only for error reporting purposes. |
 
 **开发阶段：** source-map 或 cheap-source-map
+
+
+
+##  区分打包环境
 
 
 

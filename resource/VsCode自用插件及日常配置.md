@@ -134,17 +134,13 @@ Git历史记录
 
 
 
-
-
 # 其他
 
-## MAC 配置通过`code .`命令打开VsCode
+- MAC 配置通过`code .`命令打开VsCode
 
-打开VSCode –> command+shift+p –> 输入shell command –> 点击提示Shell Command: Install ‘code’ command in PATH运行
+  ```tex
+  打开VSCode –> command+shift+p –> 输入shell command –> 点击提示Shell Command: Install ‘code’ command in PATH运行
+  ```
 
-# [iTerm2 + Oh My Zsh 打造舒适终端体验](https://www.jianshu.com/p/9c3439cc3bdb)
-
-
-
-
+- [iTerm2 + Oh My Zsh 打造舒适终端体验](https://www.jianshu.com/p/9c3439cc3bdb)
 
