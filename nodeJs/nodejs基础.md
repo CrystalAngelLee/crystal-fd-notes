@@ -277,7 +277,7 @@ app.listen(8080, () => {
 - Nodejs 全局对象上挂载许多属性
 - Nodejs 中全局对象是 global，global 的根本作用就是作为全局变量的宿主
 
-## NodeJS 常见全局变量
+## [NodeJS 常见全局变量](http://nodejs.cn/api/globals.html#global-objects)
 
 | 变量名          | 含义                           |
 | --------------- | ------------------------------ |
@@ -298,8 +298,3 @@ console.log(this == global) // false
 ```
 
 在node 环境下，每一个js 文件都是一个独立的模块，模块与模块之间都是独立的存在。nodejs 在模块化实现的时候将全局变量加入进去
-
-## 全局变量 process
-
-
-
